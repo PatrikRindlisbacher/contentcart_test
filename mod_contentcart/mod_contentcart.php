@@ -9,18 +9,20 @@
  */
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Helper\ModuleHelper;
 
+// No direct access
 defined('_JEXEC') or die;
 
-if ($params->def('prepare_content', 1))
-{
-	Factory::getApplication()->bootPlugin('content', true);
-	$module->content = HTMLHelper::_('content.prepare', $module->content, '', 'mod_contentcart.content');
-}
+/**
+ * @var  Joomla\CMS\Core\CMSApplicationInterface $app
+ * @var  Joomla\CMS\Form\Form                  $params
+ * @var  stdClass                              $module
+ */
 
-$moduleclass_sfx = htmlspecialchars($params->get('moduleclass_sfx'), ENT_COMPAT, 'UTF-8');
+$app = Factory::getApplication();
+
+
+$moduleclass_sfx = htmlspecialchars($params->get('moduleclass_sfx', ''), ENT_COMPAT, 'UTF-8');
 
 require ModuleHelper::getLayoutPath('mod_contentcart', $params->get('layout', 'default'));

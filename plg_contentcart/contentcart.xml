@@ -17,138 +17,134 @@
         <filename plugin="contentcart">contentcart.php</filename>
         <filename>index.html</filename>
     </files>
+    <languages folder="language">
+        <language tag="en-GB">en-GB/en-GB.plg_content_contentcart.ini</language>
+        <language tag="en-GB">en-GB/en-GB.plg_content_contentcart.sys.ini</language>
+        <language tag="ru-RU">ru-RU/ru-RU.plg_content_contentcart.ini</language>
+        <language tag="ru-RU">ru-RU/ru-RU.plg_content_contentcart.sys.ini</language>
+    </languages>
     <config>
-        <fields name="params">
-            <fieldset name="basic">
-                <field name="mymenuitem" type="menuitem" default="" label="CONTENTCART_MENU"
-                       description="CONTENTCART_MENU_DESC">
-                    <option value="">JNO</option>
-                </field>
-                <field
-                        name="using_price"
-                        type="radio"
-                        label="CONTENTCART_PRICE_USING"
-                        description="CONTENTCART_PRICE_USING_DESC"
-                        class="btn-group"
-                        default="0"
-                >
-                    <option value="1">CONTENTCART_YES</option>
-                    <option value="0">CONTENTCART_NO</option>
-                </field>
+  <fields name="params" addfieldprefix="Joomla\Component\Content\Administrator\Field">
+   <fieldset name="basic">
 
-                <field name="price_id" type="text" label="CONTENTCART_PRICE_ID"
-                       description="CONTENTCART_PRICE_ID_DESC"/>
-                <field name="currency" type="text" label="CONTENTCART_CURRENCY"
-                       description="CONTENTCART_CURRENCY_ID_DESC"/>
-                <field
-                        name="category_filtering_type"
-                        type="radio"
-                        label="CONTENTCART_CATFILTERINGTYPE"
-                        description="CONTENTCART_CATFILTERINGTYPE_DESC"
-                        class="btn-group"
-                        default="1"
-                >
-                    <option value="1">CONTENTCART_CATEGORY_OPTION_INCLUSIVE</option>
-                    <option value="0">CONTENTCART_CATEGORY_OPTION_EXCLUSIVE</option>
-                </field>
+    <field name="mymenuitem" type="menuitem"
+           default=""
+           label="PLG_CONTENT_CONTENTCART_MENU"
+           description="PLG_CONTENT_CONTENTCART_MENU_DESC">
+     <option value="">JNO</option>
+    </field>
 
-                <field
-                        name="catid"
-                        type="category"
-                        label="JCATEGORY"
-                        description="CONTENTCART_CATEGORY_DESC"
-                        extension="com_content"
-                        multiple="true"
-                        size="5"
-                >
-                </field>
-                <field
-                        name="application_area"
-                        type="list"
-                        default="com_content.article"
-                        multiple="true"
-                        label="CONTENTCART_APPLICATION_AREA"
-                        description="CONTENTCART_APPLICATION_AREA_DESC"
-                >
-                    <option value="com_content.article">CONTENTCART_ARTICLE</option>
-                    <option value="com_content.category">CONTENTCART_BLOG</option>
-                    <option value="com_content.featured">CONTENTCART_FEATURED</option>
-                </field>
-                <field
-                        name="cat_for_orders"
-                        type="category"
-                        label="CONTENTCART_CATEGORY_FOR_ORDERS"
-                        description="CONTENTCART_CATEGORY_FOR_ORDERS_DESC"
-                        extension="com_content"
-                        default=""
-                        size="5"
-                >
-                    <option value="">Не сохранять</option>
-                </field>
-                <field
-                        name="enable_css"
-                        type="list"
-                        default="1"
-                        label="CONTENTCART_ENABLE_CSS"
-                        description="CONTENTCART_ENABLE_CSS_DESC"
-                >
-                    <option value="1">JYES</option>
-                    <option value="0">JNO</option>
-                </field>
+    <field name="using_price"
+           type="radio"
+           label="PLG_CONTENT_CONTENTCART_PRICE_USING"
+           description="PLG_CONTENT_CONTENTCART_PRICE_USING_DESC"
+           layout="joomla.form.field.radio.switcher"
+           default="0">
+     <option value="1">JYES</option>
+     <option value="0">JNO</option>
+    </field>
 
-            </fieldset>
-            <fieldset name="client_info">
-                <field
-                        name="client_name"
-                        type="radio"
-                        label="CONTENTCART_CLIENT_NAME"
-                        description="CONTENTCART_CLIENT_NAME_DESC"
-                        class="btn-group"
-                        default="0"
-                >
-                    <option value="2">CONTENTCART_REQUIRED</option>
-                    <option value="1">CONTENTCART_NOT_REQUIRED</option>
-                    <option value="0">CONTENTCART_NO</option>
-                </field>
-                <field
-                        name="client_email"
-                        type="radio"
-                        label="CONTENTCART_CLIENT_EMAIL"
-                        description="CONTENTCART_CLIENT_EMAIL_DESC"
-                        class="btn-group"
-                        default="0"
-                >
-                    <option value="2">CONTENTCART_REQUIRED</option>
-                    <option value="1">CONTENTCART_NOT_REQUIRED</option>
-                    <option value="0">CONTENTCART_NO</option>
-                </field>
-                <field
-                        name="client_phone"
-                        type="radio"
-                        label="CONTENTCART_CLIENT_PHONE"
-                        description="CONTENTCART_CLIENT_PHONE_DESC"
-                        class="btn-group"
-                        default="0"
-                >
-                    <option value="2">CONTENTCART_REQUIRED</option>
-                    <option value="1">CONTENTCART_NOT_REQUIRED</option>
-                    <option value="0">CONTENTCART_NO</option>
-                </field>
-                <field
-                        name="client_note"
-                        type="radio"
-                        label="CONTENTCART_CLIENT_NOTE"
-                        description="CONTENTCART_CLIENT_NOTE_DESC"
-                        class="btn-group"
-                        default="0"
-                >
-                    <option value="2">CONTENTCART_REQUIRED</option>
-                    <option value="1">CONTENTCART_NOT_REQUIRED</option>
-                    <option value="0">CONTENTCART_NO</option>
-                </field>
-                <field name="title_note" type="text" label="CONTENTCART_TITLE_NOTE"
-                       description="CONTENTCART_TITLE_NOTE_DESC" default=""/>
-            </fieldset>
+    <field name="price_id" type="text" label="PLG_CONTENT_CONTENTCART_PRICE_ID"
+           description="PLG_CONTENT_CONTENTCART_PRICE_ID_DESC"/>
+    <field name="currency" type="text" label="PLG_CONTENT_CONTENTCART_CURRENCY"
+           description="PLG_CONTENT_CONTENTCART_CURRENCY_ID_DESC"/>
+
+    <field name="category_filtering_type"
+           type="radio"
+           label="PLG_CONTENT_CONTENTCART_CATFILTERINGTYPE"
+           description="PLG_CONTENT_CONTENTCART_CATFILTERINGTYPE_DESC"
+           layout="joomla.form.field.radio.switcher"
+           default="1">
+     <option value="1">PLG_CONTENT_CONTENTCART_CATEGORY_OPTION_INCLUSIVE</option>
+     <option value="0">PLG_CONTENT_CONTENTCART_CATEGORY_OPTION_EXCLUSIVE</option>
+    </field>
+
+    <field name="catid"
+           type="category"
+           label="JCATEGORY"
+           description="PLG_CONTENT_CONTENTCART_CATEGORY_DESC"
+           extension="com_content"
+           multiple="true"
+           size="5"/>
+
+    <field name="application_area"
+           type="list"
+           default="com_content.article"
+           multiple="true"
+           label="PLG_CONTENT_CONTENTCART_APPLICATION_AREA"
+           description="PLG_CONTENT_CONTENTCART_APPLICATION_AREA_DESC">
+     <option value="com_content.article">PLG_CONTENT_CONTENTCART_ARTICLE</option>
+     <option value="com_content.category">PLG_CONTENT_CONTENTCART_BLOG</option>
+     <option value="com_content.featured">PLG_CONTENT_CONTENTCART_FEATURED</option>
+    </field>
+
+    <field name="cat_for_orders"
+           type="category"
+           label="PLG_CONTENT_CONTENTCART_CATEGORY_FOR_ORDERS"
+           description="PLG_CONTENT_CONTENTCART_CATEGORY_FOR_ORDERS_DESC"
+           extension="com_content"
+           default=""
+           size="5">
+     <option value="">Не сохранять</option>
+    </field>
+
+    <field name="enable_css" type="list"
+           default="1"
+           label="PLG_CONTENT_CONTENTCART_ENABLE_CSS"
+           description="PLG_CONTENT_CONTENTCART_ENABLE_CSS_DESC">
+     <option value="1">JYES</option>
+     <option value="0">JNO</option>
+    </field>
+
+   </fieldset>
+
+   <fieldset name="client_info" label="PLG_CONTENT_CONTENTCART_CLIENT_INFO_FIELDSET_LABEL">
+   	<field name="client_name" type="radio"
+   	       label="PLG_CONTENT_CONTENTCART_CLIENT_NAME"
+           description="PLG_CONTENT_CONTENTCART_CLIENT_NAME_DESC"
+           layout="joomla.form.field.radio.switcher"
+           default="0">
+     <option value="2">PLG_CONTENT_CONTENTCART_REQUIRED</option>
+     <option value="1">PLG_CONTENT_CONTENTCART_NOT_REQUIRED</option>
+     <option value="0">PLG_CONTENT_CONTENTCART_NO</option>
+    </field>
+
+    <field name="client_email" type="radio"
+           label="PLG_CONTENT_CONTENTCART_CLIENT_EMAIL"
+           description="PLG_CONTENT_CONTENTCART_CLIENT_EMAIL_DESC"
+           layout="joomla.form.field.radio.switcher"
+           default="0">
+     <option value="2">PLG_CONTENT_CONTENTCART_REQUIRED</option>
+     <option value="1">PLG_CONTENT_CONTENTCART_NOT_REQUIRED</option>
+     <option value="0">PLG_CONTENT_CONTENTCART_NO</option>
+    </field>
+
+    <field name="client_phone" type="radio"
+           label="PLG_CONTENT_CONTENTCART_CLIENT_PHONE"
+           description="PLG_CONTENT_CONTENTCART_CLIENT_PHONE_DESC"
+           layout="joomla.form.field.radio.switcher"
+           default="0">
+     <option value="2">PLG_CONTENT_CONTENTCART_REQUIRED</option>
+     <option value="1">PLG_CONTENT_CONTENTCART_NOT_REQUIRED</option>
+     <option value="0">PLG_CONTENT_CONTENTCART_NO</option>
+    </field>
+
+    <field name="client_note" type="radio"
+           label="PLG_CONTENT_CONTENTCART_CLIENT_NOTE"
+           description="PLG_CONTENT_CONTENTCART_CLIENT_NOTE_DESC"
+           layout="joomla.form.field.radio.switcher"
+           default="0">
+     <option value="2">PLG_CONTENT_CONTENTCART_REQUIRED</option>
+     <option value="1">PLG_CONTENT_CONTENTCART_NOT_REQUIRED</option>
+     <option value="0">PLG_CONTENT_CONTENTCART_NO</option>
+    </field>
+
+    <field name="title_note" type="text"
+           label="PLG_CONTENT_CONTENTCART_TITLE_NOTE"
+           description="PLG_CONTENT_CONTENTCART_TITLE_NOTE_DESC"
+           default=""/>
+
+   </fieldset>
         </fields>
     </config>
 </extension>

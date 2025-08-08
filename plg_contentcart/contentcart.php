@@ -27,7 +27,7 @@ class plgContentcontentcart extends CMSPlugin
 	 * @param   object  $subject
 	 * @param   array   $config
 	 */
-	public function __construct(&$subject, $config)
+	public function __construct($subject, array $config = [])
 	{
 		parent::__construct($subject, $config);
 		$this->loadLanguage();
@@ -38,13 +38,16 @@ class plgContentcontentcart extends CMSPlugin
 		$app = Factory::getApplication();
 		$input = $app->input;
 		$session = $app->getSession();
-		if ($input->getInt('delete') !== null)
+		if ($input->get('delete') !== null)
 		{
-			$content_order = $session->get('content_order');
-			unset($content_order[$input->getInt('delete')]);
-			sort($content_order);
-			$session->set('content_order', $content_order);
-			$app->redirect(Uri::getInstance()->toString());
+			$content_order = $session->get('content_order', []);
+			$deleteKey = $input->get('delete');
+			if (is_array($content_order) && isset($content_order[$deleteKey]))
+			{
+				unset($content_order[$deleteKey]);
+				$session->set('content_order', array_values($content_order));
+				$app->redirect(Uri::getInstance()->toString());
+			}
 		}
 
 		if (
@@ -63,8 +66,24 @@ class plgContentcontentcart extends CMSPlugin
 			$msg = '';
 			$content_order = $session->get('content_order', []);
 
+			if (!is_array($content_order)) {
+				$content_order = [];
+			}
+
 			$article_id = $input->getInt('article_id');
-			$is_in_cart = array_search($article_id, array_column($content_order, 'article_id'));
+			$is_in_cart = false;
+			if (!empty($content_order))
+			{
+				try {
+					$is_in_cart = array_search($article_id, array_column($content_order, 'article_id'));
+				} catch (\Throwable $e) {
+					// In case of malformed data in session, reset cart.
+					$session->set('content_order', []);
+					$content_order = [];
+					$app->enqueueMessage(Text::_('PLG_CONTENT_CONTENTCART_ERROR_DATA_CORRUPTED'), 'warning');
+					$is_in_cart = false;
+				}
+			}
 
 			if ($article_id == $row->id && $is_in_cart === false)
 			{
@@ -75,7 +94,7 @@ class plgContentcontentcart extends CMSPlugin
 					'count'      => $input->getInt('count'),
 					'price'      => $input->get('price'),
 				];
-				$msg             = Text::_('CONTENTCART_ADDED');
+				$msg             = Text::_('PLG_CONTENT_CONTENTCART_ADDED');
 				$session->set('content_order', $content_order);
 			}
 			$app->enqueueMessage($msg, 'message');
@@ -99,10 +118,11 @@ class plgContentcontentcart extends CMSPlugin
 		$cart_url = Route::_("index.php?Itemid=" . $this->params->get('mymenuitem'));
 		$link     = Route::_(\Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($article->slug, $article->catid, $article->language));
 
-		if($input->getInt('mail') && !$input->getInt('nosend'))
+		if ($input->getInt('mail') && !$input->getInt('nosend'))
 		{
 			require_once __DIR__ . '/helper/contentcart.php';
-			PlgContentContentcartHelper::sendOrderEmail($this->params, $session->get('content_order'));
+			$content_order = $session->get('content_order', []);
+			PlgContentContentcartHelper::sendOrderEmail($this->params, $content_order);
 		}
 
 		if ($input->getInt('cart', 0) == 0 && $link != $cart_url)
@@ -110,7 +130,8 @@ class plgContentcontentcart extends CMSPlugin
 			return;
 		}
 
-		if ($session->get('content_order'))
+		$content_order = $session->get('content_order', []);
+		if (!empty($content_order))
 		{
 			$template = $app->getTemplate();
 			$client   = ucfirst($app->getName());
@@ -129,7 +150,7 @@ class plgContentcontentcart extends CMSPlugin
 			if (!$this->params->get('mymenuitem'))
 			{
 				$doc = Factory::getDocument();
-				$doc->setTitle(Text::_('CONTENTCART_SHOPPING_CART'));
+				$doc->setTitle(Text::_('PLG_CONTENT_CONTENTCART_SHOPPING_CART'));
 			}
 		}
 		elseif ($link != $cart_url)

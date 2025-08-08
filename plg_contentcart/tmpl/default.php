@@ -25,12 +25,18 @@ if ($this->params->get('mymenuitem'))
 }
 else
 {
-	$content_order = $session->get('content_order');
-
-	$uri = Uri::getInstance();
-	$uri->parse($content_order[0]['link']);
-	$uri->setVar('cart', '1');
-	$cart_url = $uri->toString();
+	$content_order = $session->get('content_order', []);
+	$cart_url = '';
+	if (!empty($content_order[0]['link'])){
+		try {
+			$uri = Uri::getInstance($content_order[0]['link']);
+			$uri->setVar('cart', '1');
+			$cart_url = $uri->toString();
+		} catch (\Exception $e) {
+			// Handle error if link is invalid
+	           $cart_url = Route::_('index.php?option=com_content&view=article&id='.(int)($content_order[0]['article_id'] ?? 0).'&cart=1');
+		}
+	}
 }
 
 if ($params->get('enable_css', 1))
@@ -39,38 +45,50 @@ if ($params->get('enable_css', 1))
 	$wa->registerAndUseStyle('plg_content_contentcart.front', 'plugins/content/contentcart/assets/css/jlcontentcart.css');
 }
 
-if ((!$session->get('content_order') or array_search($row->id, array_column($session->get('content_order', array()), 'article_id')) === false) && $link != $cart_url)
-{
+$content_order = $session->get('content_order', []);
+$in_cart = false;
+if (!empty($content_order)) {
+    try {
+        $in_cart = array_search($row->id, array_column($content_order, 'article_id')) !== false;
+    } catch (\Throwable $e) {
+        // In case of malformed data in session
+        $in_cart = false;
+    }
+}
+
+if (!$in_cart && $link !== $cart_url) {
 	?>
     <div class="jlcontentcart">
-        <form action="<?php
-		echo Uri::getInstance()->toString() ?>" method="post">
+        <form action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>" method="post">
             <input type="hidden" name="add" value="1"/>
-            <input type="hidden" name="article_id" value="<?php
-			echo $row->id ?>"/>
-            <input type="hidden" name="title" value="<?php
-			echo $row->title ?>"/>
-            <input type="hidden" name="link" value="<?php
-			echo $link ?>"/>
+            <input type="hidden" name="article_id" value="<?php echo (int) $row->id; ?>"/>
+            <input type="hidden" name="title" value="<?php echo htmlspecialchars($row->title, ENT_QUOTES, 'UTF-8'); ?>"/>
+            <input type="hidden" name="link" value="<?php echo htmlspecialchars($link, ENT_QUOTES, 'UTF-8'); ?>"/>
 			<?php
-			if ($this->params->get('using_price') == '1') { ?>
-                <input type="hidden" name="price" value="<?php
-				echo $row->jcfields[$this->params->get('price_id')]->value ?>"/>
-			<?php
+			if ($this->params->get('using_price') == '1') {
+				$price_id = $this->params->get('price_id');
+				$price = 0;
+				if (!empty($price_id) && isset($row->jcfields[$price_id]) && !empty($row->jcfields[$price_id]->value)) {
+					$price = $row->jcfields[$price_id]->value;
+				}
+				?>
+                <input type="hidden" name="price" value="<?php echo htmlspecialchars($price, ENT_QUOTES, 'UTF-8'); ?>"/>
+				<?php
 			} ?>
-            <input type="submit" class="jlcc-button jlcc-primary" value="<?php
-			echo Text::_('CONTENTCART_ADD_TO_CART') ?>"/>
+            <input type="submit" class="jlcc-button jlcc-primary" value="<?php echo Text::_('PLG_CONTENT_CONTENTCART_ADD_TO_CART'); ?>"/>
             <input type="number" name="count" max="999" min="1" value="1" class="jlcc-input jlcc-count">
+			<?php echo HTMLHelper::_('form.token'); ?>
         </form>
     </div>
 <?php
-}
-
-elseif (!Factory::getApplication()->input->getInt('cart') && $link != $cart_url)
-{ ?>
-    <div class="to-cart"><a class="jlcc-button jlcc-success" href="<?php
-		echo $cart_url; ?>"><?php
-			echo Text::_('CONTENTCART_GO_TO_CART') ?></a></div>
+} elseif ($link !== $cart_url && $cart_url) {
+    ?>
+    <div class="to-cart">
+        <a class="jlcc-button jlcc-success" href="<?php echo htmlspecialchars($cart_url, ENT_QUOTES, 'UTF-8'); ?>">
+			<?php echo Text::_('PLG_CONTENT_CONTENTCART_GO_TO_CART'); ?>
+        </a>
+    </div>
 <?php
-} ?>
+}
+?>
 
