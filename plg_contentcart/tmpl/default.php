@@ -8,20 +8,26 @@
  * @license 	GNU General Public License version 2 or later; see	LICENSE.txt
  */
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Uri\Uri;
+use Joomla\Registry\Registry;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Language\Text;
+
 defined('_JEXEC') or die;
 
-JHtml::_('jquery.framework');
-$doc = JFactory::getDocument();
+$doc = Factory::getDocument();
 
 if ($this->params->get('mymenuitem'))
 {
-	$cart_url = JRoute::_("index.php?Itemid=" . $this->params->get('mymenuitem'));
+	$cart_url = Route::_("index.php?Itemid=" . $this->params->get('mymenuitem'));
 }
 else
 {
 	$content_order = $session->get('content_order');
 
-	$uri = JUri::getInstance();
+	$uri = Uri::getInstance();
 	$uri->parse($content_order[0]['link']);
 	$uri->setVar('cart', '1');
 	$cart_url = $uri->toString();
@@ -29,7 +35,8 @@ else
 
 if ($params->get('enable_css', 1))
 {
-	$doc->addStyleSheet(JUri::root() . 'plugins/content/contentcart/assets/css/jlcontentcart.css', array('version' => 'auto'));
+	$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+	$wa->registerAndUseStyle('plg_content_contentcart.front', 'plugins/content/contentcart/assets/css/jlcontentcart.css');
 }
 
 if ((!$session->get('content_order') or array_search($row->id, array_column($session->get('content_order', array()), 'article_id')) === false) && $link != $cart_url)
@@ -37,7 +44,7 @@ if ((!$session->get('content_order') or array_search($row->id, array_column($ses
 	?>
     <div class="jlcontentcart">
         <form action="<?php
-		echo $_SERVER['REQUEST_URI'] ?>" method="post">
+		echo Uri::getInstance()->toString() ?>" method="post">
             <input type="hidden" name="add" value="1"/>
             <input type="hidden" name="article_id" value="<?php
 			echo $row->id ?>"/>
@@ -52,18 +59,18 @@ if ((!$session->get('content_order') or array_search($row->id, array_column($ses
 			<?php
 			} ?>
             <input type="submit" class="jlcc-button jlcc-primary" value="<?php
-			echo JText::_('CONTENTCART_ADD_TO_CART') ?>"/>
+			echo Text::_('CONTENTCART_ADD_TO_CART') ?>"/>
             <input type="number" name="count" max="999" min="1" value="1" class="jlcc-input jlcc-count">
         </form>
     </div>
 <?php
 }
 
-elseif (!JFactory::getApplication()->input->getInt('cart') && $link != $cart_url)
+elseif (!Factory::getApplication()->input->getInt('cart') && $link != $cart_url)
 { ?>
     <div class="to-cart"><a class="jlcc-button jlcc-success" href="<?php
 		echo $cart_url; ?>"><?php
-			echo JText::_('CONTENTCART_GO_TO_CART') ?></a></div>
+			echo Text::_('CONTENTCART_GO_TO_CART') ?></a></div>
 <?php
 } ?>
 

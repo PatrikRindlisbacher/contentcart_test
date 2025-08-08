@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension type="module" version="4.0.0" client="site" method="upgrade">
+<extension type="module" version="5.0" client="site" method="upgrade">
 	<name>MOD_CONTENTCART_NAME</name>
     <author>Joomline</author>
     <authorEmail>sale@joomline.ru</authorEmail>
 	<creationDate>@date@</creationDate>
-    <authorUrl>https://joomline.ru/</authorUrl>
+    <authorurl>https://joomline.ru/</authorurl>
     <copyright>(C) 2018-2022 Joomline. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <version>@version@</version>

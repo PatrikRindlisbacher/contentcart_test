@@ -1,17 +1,25 @@
 <?php
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Router\Route;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\CMS\Uri\Uri; // Добавлено для Uri::getInstance() если потребуется
+
 // No direct access
 defined('_JEXEC') or die;
 
 /**
  * Content Cart
  *
- * @version          @version@
- * @author           Joomline
- * @copyright    (C) 2018 Efanych (efanych@gmail.com), Joomline. All rights reserved.
- * @license          GNU General Public License version 2 or later; see    LICENSE.txt
+ * @version 	@version@
+ * @author		Joomline
+ * @copyright	(C) 2018 Efanych (efanych@gmail.com), Joomline. All rights reserved.
+ * @license 	GNU General Public License version 2 or later; see	LICENSE.txt
  */
-class plgContentcontentcart extends JPlugin
+class plgContentcontentcart extends CMSPlugin
 {
 	/**
 	 * Class Constructor
@@ -27,14 +35,16 @@ class plgContentcontentcart extends JPlugin
 
 	public function onContentAfterDisplay($context, &$row, &$params, $page = 0)
 	{
-		$session = JFactory::getSession();
-		if (JFactory::getApplication()->input->getInt('delete') !== null)
+		$app = Factory::getApplication();
+		$input = $app->input;
+		$session = $app->getSession();
+		if ($input->getInt('delete') !== null)
 		{
 			$content_order = $session->get('content_order');
-			unset($content_order[JFactory::getApplication()->input->getInt('delete')]);
+			unset($content_order[$input->getInt('delete')]);
 			sort($content_order);
 			$session->set('content_order', $content_order);
-			JFactory::getApplication()->redirect($_SERVER['HTTP_REFERER'], 301);
+			$app->redirect(Uri::getInstance()->toString());
 		}
 
 		if (
@@ -47,25 +57,31 @@ class plgContentcontentcart extends JPlugin
 		{
 			return;
 		}
-		$link = JRoute::_(ContentHelperRoute::getArticleRoute($row->slug, $row->catid, $row->language));
-		if (!empty($_REQUEST['add']))
+		$link = Route::_(\Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($row->slug, $row->catid, $row->language));
+		if ($input->getInt('add'))
 		{
 			$msg = '';
-			if ($session->get('content_order'))
+			$content_order = $session->get('content_order', []);
+
+			$article_id = $input->getInt('article_id');
+			$is_in_cart = array_search($article_id, array_column($content_order, 'article_id'));
+
+			if ($article_id == $row->id && $is_in_cart === false)
 			{
-				$content_order = $session->get('content_order');
-			}
-			if ($_REQUEST['article_id'] == $row->id && (!$session->get('content_order') or array_search($row->id, array_column($session->get('content_order'), 'article_id')) === false))
-			{
-				$content_order[] = array('article_id' => $_REQUEST['article_id'], 'title' => $_REQUEST['title'], 'link' => $_REQUEST['link'], 'count' => $_REQUEST['count'], 'price' => ($_REQUEST['price']));
-				$msg             = JText::_('CONTENTCART_ADDED');
+				$content_order[] = [
+					'article_id' => $article_id,
+					'title'      => $input->getString('title'),
+					'link'       => $input->getString('link'),
+					'count'      => $input->getInt('count'),
+					'price'      => $input->get('price'),
+				];
+				$msg             = Text::_('CONTENTCART_ADDED');
 				$session->set('content_order', $content_order);
 			}
-			$application = JFactory::getApplication();
-			$application->enqueueMessage($msg, 'message');
+			$app->enqueueMessage($msg, 'message');
 		}
 		ob_start();
-		include JPluginHelper::getLayoutPath('content', 'contentcart', 'default');
+		include PluginHelper::getLayoutPath('content', 'contentcart', 'default');
 		$html = ob_get_clean();
 
 		return $html;
@@ -77,11 +93,19 @@ class plgContentcontentcart extends JPlugin
 		{
 			return;
 		}
-		$app      = JFactory::getApplication();
-		$session  = JFactory::getSession();
-		$cart_url = JRoute::_("index.php?Itemid=" . $this->params->get('mymenuitem'));
-		$link     = JRoute::_(ContentHelperRoute::getArticleRoute($article->slug, $article->catid, $article->language));
-		if ($app->input->getInt('cart', 0) == 0 && $link != $cart_url)
+		$app      = Factory::getApplication();
+		$input = $app->input;
+		$session  = $app->getSession();
+		$cart_url = Route::_("index.php?Itemid=" . $this->params->get('mymenuitem'));
+		$link     = Route::_(\Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute($article->slug, $article->catid, $article->language));
+
+		if($input->getInt('mail') && !$input->getInt('nosend'))
+		{
+			require_once __DIR__ . '/helper/contentcart.php';
+			PlgContentContentcartHelper::sendOrderEmail($this->params, $session->get('content_order'));
+		}
+
+		if ($input->getInt('cart', 0) == 0 && $link != $cart_url)
 		{
 			return;
 		}
@@ -91,28 +115,26 @@ class plgContentcontentcart extends JPlugin
 			$template = $app->getTemplate();
 			$client   = ucfirst($app->getName());
 
-			$controller = $app->bootComponent('com_content')
-				->getMVCFactory()->createController('Article', $client, [], $app, $app->input);
-
-			$view = $controller->getView('article', JFactory::getDocument()->getType());
+			$view = $app->bootComponent('com_content')->getMVCFactory()->getView('article',  Factory::getDocument()->getType(), $client);
 
 			$basePath = JPATH_ROOT . '/plugins/content/contentcart/tmpl/';
 			if (is_file(JPATH_ROOT . '/templates/' . $template . '/html/plg_content_contentcart/cart.php'))
 			{
 				$basePath = JPATH_ROOT . '/templates/' . $template . '/html/plg_content_contentcart/';
 			}
+			
 
 			$view->addTemplatePath($basePath);
 			$view->setLayout('cart');
 			if (!$this->params->get('mymenuitem'))
 			{
-				$doc = JFactory::getDocument();
-				$doc->setTitle(JText::_('CONTENTCART_SHOPPING_CART'));
+				$doc = Factory::getDocument();
+				$doc->setTitle(Text::_('CONTENTCART_SHOPPING_CART'));
 			}
 		}
 		elseif ($link != $cart_url)
 		{
-			JFactory::getApplication()->redirect($link, 301);
+			$app->redirect($link);
 		}
 	}
 

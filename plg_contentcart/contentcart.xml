@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="4.0.0" type="plugin" group="content" method="upgrade">
+<extension version="5.0" type="plugin" group="content" method="upgrade">
     <name>PLG_CONTENT_CONTENTCART</name>
     <author>Joomline</author>
     <authorEmail>sale@joomline.ru</authorEmail>
     <creationDate>@date@</creationDate>
-    <authorUrl>https://joomline.ru/</authorUrl>
+    <authorurl>https://joomline.ru/</authorurl>
     <copyright>(C) 2018-2022 Joomline. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <version>@version@</version>
     <description>PLG_CONTENTCART_DESC</description>
     <files>
         <folder>assets</folder>
+        <folder>helper</folder>
         <folder>tmpl</folder>
         <folder>language</folder>
         <filename plugin="contentcart">contentcart.php</filename>
@@ -28,7 +29,7 @@
                         type="radio"
                         label="CONTENTCART_PRICE_USING"
                         description="CONTENTCART_PRICE_USING_DESC"
-                        class="btn-group btn-group-yesno"
+                        class="btn-group"
                         default="0"
                 >
                     <option value="1">CONTENTCART_YES</option>
@@ -44,7 +45,7 @@
                         type="radio"
                         label="CONTENTCART_CATFILTERINGTYPE"
                         description="CONTENTCART_CATFILTERINGTYPE_DESC"
-                        class="btn-group btn-group-yesno"
+                        class="btn-group"
                         default="1"
                 >
                     <option value="1">CONTENTCART_CATEGORY_OPTION_INCLUSIVE</option>
@@ -102,7 +103,7 @@
                         type="radio"
                         label="CONTENTCART_CLIENT_NAME"
                         description="CONTENTCART_CLIENT_NAME_DESC"
-                        class="btn-group btn-group-yesno"
+                        class="btn-group"
                         default="0"
                 >
                     <option value="2">CONTENTCART_REQUIRED</option>
@@ -114,7 +115,7 @@
                         type="radio"
                         label="CONTENTCART_CLIENT_EMAIL"
                         description="CONTENTCART_CLIENT_EMAIL_DESC"
-                        class="btn-group btn-group-yesno"
+                        class="btn-group"
                         default="0"
                 >
                     <option value="2">CONTENTCART_REQUIRED</option>
@@ -126,7 +127,7 @@
                         type="radio"
                         label="CONTENTCART_CLIENT_PHONE"
                         description="CONTENTCART_CLIENT_PHONE_DESC"
-                        class="btn-group btn-group-yesno"
+                        class="btn-group"
                         default="0"
                 >
                     <option value="2">CONTENTCART_REQUIRED</option>
@@ -138,7 +139,7 @@
                         type="radio"
                         label="CONTENTCART_CLIENT_NOTE"
                         description="CONTENTCART_CLIENT_NOTE_DESC"
-                        class="btn-group btn-group-yesno"
+                        class="btn-group"
                         default="0"
                 >
                     <option value="2">CONTENTCART_REQUIRED</option>

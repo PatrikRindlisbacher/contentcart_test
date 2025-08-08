@@ -8,24 +8,26 @@
  * @license 	GNU General Public License version 2 or later; see	LICENSE.txt
  */
 
+use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Registry\Registry;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Uri\Uri;
+
 defined('_JEXEC') or die;
 
 header('Content-Type: text/html; charset=utf-8');
-JHtml::addIncludePath(JPATH_COMPONENT . '/helpers');
-$session       = JFactory::getSession();
-$plugin        = JPluginHelper::getPlugin('content', 'contentcart');
-$pluginParams  = new JRegistry($plugin->params);
+$session       = Factory::getApplication()->getSession();
+$plugin        = PluginHelper::getPlugin('content', 'contentcart');
+$pluginParams  = new Registry($plugin->params);
 $content_order = $session->get('content_order');
-$app           = JFactory::getApplication();
-if ($app->input->getInt('mail') && !$app->input->getInt('nosend'))
-{
-	include JPluginHelper::getLayoutPath('content', 'contentcart', 'mail');
-}
-if (!empty($_REQUEST['nosend']))
+$app           = Factory::getApplication();
+if (!$app->input->getInt('mail') && $app->input->getInt('nosend'))
 {
 	for ($i = 0; $i < count($content_order); $i++)
 	{
-		$content_order[$i]['count'] = $_REQUEST['count' . $i];
+		$content_order[$i]['count'] = $app->input->getInt('count' . $i, 1);
 	}
 	$session->set('content_order', $content_order);
 }
@@ -34,22 +36,21 @@ if (!empty($_REQUEST['nosend']))
 ?>
 <div class="jlcontentcart">
     <h1 class="title"><?php
-		echo JText::_('CONTENTCART_SHOPPING_CART') ?></h1>
-    <form name="cart" class="order" method="post" action="<?php
-	$_SERVER['REQUEST_URI'] ?>">
+		echo Text::_('CONTENTCART_SHOPPING_CART') ?></h1>
+    <form name="cart" class="order" method="post" action="<?php echo Uri::getInstance()->toString(); ?>">
         <table style="width:100%;">
             <thead>
             <th>№</th>
             <th><?php
-				echo JText::_('CONTENTCART_PRODUCT_TITLE') ?></th>
+				echo Text::_('CONTENTCART_PRODUCT_TITLE') ?></th>
             <th><?php
-				echo JText::_('CONTENTCART_PRODUCT_COUNT') ?></th>
+				echo Text::_('CONTENTCART_PRODUCT_COUNT') ?></th>
 			<?php
 			if ($pluginParams->get('using_price') == '1') { ?>
                 <th><?php
-					echo JText::_('CONTENTCART_PRODUCT_PRICE') ?></th>
+					echo Text::_('CONTENTCART_PRODUCT_PRICE') ?></th>
                 <th><?php
-					echo JText::_('CONTENTCART_PRODUCT_SUMM') ?></th>
+					echo Text::_('CONTENTCART_PRODUCT_SUMM') ?></th>
 			<?php
 			} ?>
             <th></th>
@@ -66,8 +67,8 @@ if (!empty($_REQUEST['nosend']))
 						echo $order_item['link'] ?>"><?php
 							echo $order_item['title'] ?></a></td>
                     <td><input class="jlcc-input jlcc-count" type="number" name="count<?php
-						echo $i ?>" max="999" min="1" value="<?php
-						echo $order_item['count'] ?>" onchange="update()"/></td>
+      echo $i ?>" max="999" min="1" value="<?php
+      echo $order_item['count'] ?>" onchange="this.form.submit()"/></td>
 					<?php
 					if ($pluginParams->get('using_price') == '1') { ?>
                         <td name="price"><?php
@@ -77,8 +78,8 @@ if (!empty($_REQUEST['nosend']))
 					<?php
 					} ?>
                     <td><a href="<?php
-						echo JURI::current() . '?delete=' . $i ?>"><?php
-							echo JText::_('CONTENTCART_PRODUCT_DELETE') ?></a></td>
+						echo Uri::getInstance()->toString() . '?delete=' . $i ?>"><?php
+							echo Text::_('CONTENTCART_PRODUCT_DELETE') ?></a></td>
                 </tr>
 				<?php
 				$i++;
@@ -88,7 +89,7 @@ if (!empty($_REQUEST['nosend']))
 			if ($pluginParams->get('using_price') == '1') { ?>
                 <tr class="order_total">
                     <td colspan="4" style="text-align:right;"><b><?php
-							echo JText::_('CONTENTCART_PRODUCT_TOTAL') ?>:&nbsp;</b></td>
+							echo Text::_('CONTENTCART_PRODUCT_TOTAL') ?>:&nbsp;</b></td>
                     <td> <?php
 						echo $total . ' ' . $pluginParams->get('currency') ?></td>
                     <td></td>
@@ -98,11 +99,11 @@ if (!empty($_REQUEST['nosend']))
             </tbody>
         </table>
 		<?php
-		if (!JFactory::getUser()->guest)
+		if (!Factory::getApplication()->getIdentity()->guest)
 		{
-			$userid    = JFactory::getUser()->id;
-			$useremail = JFactory::getUser()->email;
-			$username  = JFactory::getUser()->name;
+			$userid    = Factory::getApplication()->getIdentity()->id;
+			$useremail = Factory::getApplication()->getIdentity()->email;
+			$username  = Factory::getApplication()->getIdentity()->name;
 		}
 		else
 		{
@@ -112,7 +113,7 @@ if (!empty($_REQUEST['nosend']))
 		}
 		?>
         <h3 class="jlcc-title-data"><?php
-			echo JText::_('CONTENTCART_CLIENT_DATA') ?></h3>
+			echo Text::_('CONTENTCART_CLIENT_DATA') ?></h3>
         <div class="jlcc-block-data">
             <input class="jlcc-input" type="hidden" name="mail" value="1"/>
 			<?php
@@ -125,8 +126,8 @@ if (!empty($_REQUEST['nosend']))
                             required="required" aria-required="true"
 						<?php
 						} ?>
-                           autofocus="" aria-invalid="false" placeholder="<?php
-					echo JText::_('CONTENTCART_ENTER_NAME') ?>"/>
+                            autofocus="" aria-invalid="false" placeholder="<?php
+					echo Text::_('CONTENTCART_ENTER_NAME') ?>"/>
                 </div>
 			<?php
 			} ?>
@@ -141,8 +142,8 @@ if (!empty($_REQUEST['nosend']))
                             required="required" aria-required="true"
 						<?php
 						} ?>
-                           autofocus="" aria-invalid="false" placeholder="<?php
-					echo JText::_('CONTENTCART_ENTER_EMAIL') ?>" validate="email"/>
+                            autofocus="" aria-invalid="false" placeholder="<?php
+					echo Text::_('CONTENTCART_ENTER_EMAIL') ?>" validate="email"/>
                 </div>
 			<?php
 			} ?>
@@ -156,8 +157,8 @@ if (!empty($_REQUEST['nosend']))
                             required="required" aria-required="true"
 						<?php
 						} ?>
-                           autofocus="" aria-invalid="false" placeholder="<?php
-					echo JText::_('CONTENTCART_ENTER_PHONE') ?>"/>
+                            autofocus="" aria-invalid="false" placeholder="<?php
+					echo Text::_('CONTENTCART_ENTER_PHONE') ?>"/>
                 </div>
 			<?php
 			} ?>
@@ -174,22 +175,15 @@ if (!empty($_REQUEST['nosend']))
 					if ($pluginParams->get('title_note')) {
 						echo $pluginParams->get('title_note');
 					} else {
-						echo JText::_('CONTENTCART_CLIENT_NOTE');
+						echo Text::_('CONTENTCART_CLIENT_NOTE');
 					} ?>"></textarea></div>
 			<?php
 			} ?>
             <div><input type="submit" class="validate jlcc-button jlcc-primary" value="<?php
-				echo JText::_('CONTENTCART_TO_ORDER') ?>"/></div>
+				echo Text::_('CONTENTCART_TO_ORDER') ?>"/></div>
         </div>
     </form>
     <script>
-        function update() {
-            var x = document.createElement("INPUT");
-            x.setAttribute("type", "hidden");
-            x.setAttribute("name", "nosend");
-            x.setAttribute("value", "yes");
-            document.cart.appendChild(x);
-            document.cart.submit();
-        }
+        HTMLFormElement.prototype.submit.call(document.cart);
     </script>
 </div>
