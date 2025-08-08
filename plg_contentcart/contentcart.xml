@@ -83,8 +83,7 @@
            label="PLG_CONTENT_CONTENTCART_CATEGORY_FOR_ORDERS"
            description="PLG_CONTENT_CONTENTCART_CATEGORY_FOR_ORDERS_DESC"
            extension="com_content"
-           default=""
-           size="5">
+           default="">
      <option value="">Не сохранять</option>
     </field>
 
