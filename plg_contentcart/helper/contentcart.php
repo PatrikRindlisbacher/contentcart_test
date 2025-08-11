@@ -43,6 +43,11 @@ class PlgContentContentcartHelper
 		$body = LayoutHelper::render('plugins.content.contentcart.mail', $layoutData);
 		
 		$mailer->isHTML(true);
+		if (empty($body))
+		{
+			$app->enqueueMessage(Text::_('PLG_CONTENT_CONTENTCART_MAIL_BODY_EMPTY_ERROR'), 'error');
+			return;
+		}
 		$mailer->setBody($body);
 		
 		$send = $mailer->Send();

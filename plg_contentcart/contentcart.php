@@ -108,7 +108,7 @@ class plgContentcontentcart extends CMSPlugin
 
 	public function onContentPrepare($context, $article, $params, $page = 0)
 	{
-		if ($context != 'com_content.article')
+		if (!str_starts_with($context, 'com_content.'))
 		{
 			return;
 		}
@@ -133,20 +133,9 @@ class plgContentcontentcart extends CMSPlugin
 		$content_order = $session->get('content_order', []);
 		if (!empty($content_order))
 		{
-			$template = $app->getTemplate();
-			$client   = ucfirst($app->getName());
-
-			$view = $app->bootComponent('com_content')->getMVCFactory()->getView('article',  Factory::getDocument()->getType(), $client);
-
-			$basePath = JPATH_ROOT . '/plugins/content/contentcart/tmpl/';
-			if (is_file(JPATH_ROOT . '/templates/' . $template . '/html/plg_content_contentcart/cart.php'))
-			{
-				$basePath = JPATH_ROOT . '/templates/' . $template . '/html/plg_content_contentcart/';
-			}
-			
-
-			$view->addTemplatePath($basePath);
-			$view->setLayout('cart');
+			ob_start();
+			include PluginHelper::getLayoutPath('content', 'contentcart', 'cart');
+			$article->text = ob_get_clean();
 			if (!$this->params->get('mymenuitem'))
 			{
 				$doc = Factory::getDocument();

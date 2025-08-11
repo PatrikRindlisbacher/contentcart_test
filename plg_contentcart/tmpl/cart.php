@@ -69,7 +69,7 @@ $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '
 	<?php if (empty($content_order)) : ?>
 		<p><?php echo Text::_('PLG_CONTENT_CONTENTCART_CART_IS_EMPTY'); ?></p>
 	<?php else : ?>
-		<form name="cart" class="order" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
+		<form name="cart_update" class="order_update" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
 			<table style="width:100%;">
 				<thead>
 					<th>№</th>
@@ -110,8 +110,10 @@ $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '
 				<?php endif; ?>
 				</tbody>
 			</table>
+		</form>
 
-			<h3 class="jlcc-title-data"><?php echo Text::_('PLG_CONTENT_CONTENTCART_CLIENT_DATA'); ?></h3>
+		<h3 class="jlcc-title-data"><?php echo Text::_('PLG_CONTENT_CONTENTCART_CLIENT_DATA'); ?></h3>
+		<form name="cart_order" class="order" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
 			<div class="jlcc-block-data">
 				<input class="jlcc-input" type="hidden" name="mail" value="1"/>
 				<?php if ($pluginParams->get('client_name') != '0') : ?>
@@ -152,7 +154,7 @@ $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '
 				<div>
 					<input type="submit" class="validate jlcc-button jlcc-primary" value="<?php echo Text::_('PLG_CONTENT_CONTENTCART_TO_ORDER'); ?>"/>
 				</div>
-                <?php echo HTMLHelper::_('form.token'); ?>
+		              <?php echo HTMLHelper::_('form.token'); ?>
 			</div>
 		</form>
 	<?php endif; ?>
