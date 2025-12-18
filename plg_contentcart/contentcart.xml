@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<extension version="5.0" type="plugin" group="content" method="upgrade">
+<extension version="5.1" type="plugin" group="content" element="contentcart" method="upgrade">
     <name>PLG_CONTENT_CONTENTCART</name>
+    <namespace path="src">Joomline\Plugin\Content\Contentcart</namespace>
     <author>Joomline</author>
     <authorEmail>sale@joomline.ru</authorEmail>
     <creationDate>@date@</creationDate>
     <authorurl>https://joomline.ru/</authorurl>
-    <copyright>(C) 2018-2022 Joomline. All rights reserved.</copyright>
+    <copyright>(C) 2018-2025 Joomline. All rights reserved.</copyright>
     <license>GNU General Public License version 2 or later</license>
     <version>@version@</version>
     <description>PLG_CONTENTCART_DESC</description>
     <files>
-        <folder>assets</folder>
-        <folder>helper</folder>
+        <folder>services</folder>
+        <folder plugin="contentcart">src</folder>
+        <folder>layouts</folder>
         <folder>tmpl</folder>
         <folder>language</folder>
-        <filename plugin="contentcart">contentcart.php</filename>
         <filename>index.html</filename>
     </files>
+    <media destination="plg_content_contentcart" folder="assets">
+        <folder>css</folder>
+        <filename>joomla.asset.json</filename>
+    </media>
     <languages folder="language">
         <language tag="en-GB">en-GB/en-GB.plg_content_contentcart.ini</language>
         <language tag="en-GB">en-GB/en-GB.plg_content_contentcart.sys.ini</language>
@@ -75,6 +80,7 @@
            description="PLG_CONTENT_CONTENTCART_APPLICATION_AREA_DESC">
      <option value="com_content.article">PLG_CONTENT_CONTENTCART_ARTICLE</option>
      <option value="com_content.category">PLG_CONTENT_CONTENTCART_BLOG</option>
+     <option value="com_content.categories">PLG_CONTENT_CONTENTCART_CATEGORIES</option>
      <option value="com_content.featured">PLG_CONTENT_CONTENTCART_FEATURED</option>
     </field>
 

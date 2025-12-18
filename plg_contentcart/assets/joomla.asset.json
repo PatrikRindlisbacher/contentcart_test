@@ -1,0 +1,14 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "plg_content_contentcart",
+  "version": "3.0.0",
+  "description": "Content Cart Plugin Assets",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "plg_content_contentcart.jlcontentcart",
+      "type": "style",
+      "uri": "plg_content_contentcart/jlcontentcart.css"
+    }
+  ]
+}

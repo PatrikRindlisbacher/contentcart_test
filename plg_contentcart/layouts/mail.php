@@ -1,4 +1,12 @@
 <?php
+/**
+ * @package     Joomla.Plugin
+ * @subpackage  Content.contentcart
+ *
+ * @copyright   (C) 2018-2025 Joomline. All rights reserved.
+ * @license     GNU General Public License version 2 or later
+ */
+
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
@@ -6,23 +14,17 @@ use Joomla\CMS\Uri\Uri;
 use Joomla\Registry\Registry;
 
 /**
- * @var     Registry $params
- * @var     array    $content_order
- * @var     string   $client_name
- * @var     string   $client_email
- * @var     string   $client_phone
- * @var     string   $client_note
- * @var     string   $title_note
+ * Layout variables
+ * @var Registry $params
+ * @var array    $content_order
+ * @var string   $client_name
+ * @var string   $client_email
+ * @var string   $client_phone
+ * @var string   $client_note
+ * @var string   $title_note
  */
 
-$params        = $this->get('params');
-$content_order = $this->get('content_order');
-$client_name   = $this->get('client_name');
-$client_email  = $this->get('client_email');
-$client_phone  = $this->get('client_phone');
-$client_note   = $this->get('client_note');
-$title_note    = $this->get('title_note');
-
+extract($displayData);
 ?>
 <h2><?php echo Text::_('PLG_CONTENT_CONTENTCART_ORDER_INFO'); ?></h2>
 <table style="width:100%;">
