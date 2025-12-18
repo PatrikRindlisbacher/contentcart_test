@@ -1,0 +1,14 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "mod_contentcart",
+  "version": "2.0.0",
+  "description": "Content Cart Module Assets",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "mod_contentcart.styles",
+      "type": "style",
+      "uri": "plugins/content/contentcart/assets/css/jlcontentcart.css"
+    }
+  ]
+}

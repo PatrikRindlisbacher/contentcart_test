@@ -1,3 +1,6 @@
 *.zip
 /_build/
 /_dist/
+.claude/
+.DS_Store
+Thumbs.db
