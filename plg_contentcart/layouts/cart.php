@@ -51,23 +51,31 @@ if (!$app->input->getInt('mail') && $app->isClient('site') && count($content_ord
 
 	if (!empty($counts))
 	{
-		$changed = false;
-		foreach ($content_order as $key => &$item)
+		// CSRF Protection for cart update
+		if (!Session::checkToken())
 		{
-			if (isset($counts[$key]))
+			$app->enqueueMessage(Text::_('JINVALID_TOKEN'), 'error');
+		}
+		else
+		{
+			$changed = false;
+			foreach ($content_order as $key => &$item)
 			{
-				$newCount = (int) $counts[$key];
-				if ($newCount > 0 && $newCount <= 999 && $item['count'] != $newCount)
+				if (isset($counts[$key]))
 				{
-					$item['count'] = $newCount;
-					$changed = true;
+					$newCount = (int) $counts[$key];
+					if ($newCount > 0 && $newCount <= 999 && $item['count'] != $newCount)
+					{
+						$item['count'] = $newCount;
+						$changed = true;
+					}
 				}
 			}
-		}
 
-		if ($changed)
-		{
-			$session->set('content_order', $content_order);
+			if ($changed)
+			{
+				$session->set('content_order', $content_order);
+			}
 		}
 	}
 }
@@ -76,24 +84,7 @@ if (!$app->input->getInt('mail') && $app->isClient('site') && count($content_ord
 $username  = !$isGuest ? htmlspecialchars($user->name, ENT_QUOTES, 'UTF-8') : '';
 $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '';
 
-// Load CSS via WebAssetManager
-if ($params->get('enable_css', 1))
-{
-	$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-
-	// Try to use plugin's CSS asset if available
-	try
-	{
-		if ($wa->assetExists('style', 'plg_content_contentcart.jlcontentcart'))
-		{
-			$wa->useStyle('plg_content_contentcart.jlcontentcart');
-		}
-	}
-	catch (\Exception $e)
-	{
-		// Asset not available, silently continue
-	}
-}
+// PERF-005: CSS is now loaded centrally in onAfterRoute, no need to load here
 ?>
 <div class="jlcontentcart">
 	<h1 class="title"><?php echo Text::_('PLG_CONTENT_CONTENTCART_SHOPPING_CART'); ?></h1>
@@ -102,6 +93,7 @@ if ($params->get('enable_css', 1))
 		<p><?php echo Text::_('PLG_CONTENT_CONTENTCART_CART_IS_EMPTY'); ?></p>
 	<?php else : ?>
 		<form name="cart_update" class="order_update" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
+			<?php echo HTMLHelper::_('form.token'); ?>
 			<table style="width:100%;">
 				<thead>
 					<th>№</th>

@@ -31,24 +31,7 @@ $cart_url      = $cartData['cart_url'] ?? '';
 $currency      = htmlspecialchars($cartData['currency'] ?? '', ENT_QUOTES, 'UTF-8');
 $using_price   = $cartData['using_price'] ?? 0;
 
-// Register CSS if enabled
-if ($params->get('enable_css', 1))
-{
-	$wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-
-	// Try to use plugin's CSS asset if available
-	try
-	{
-		if ($wa->assetExists('style', 'plg_content_contentcart.jlcontentcart'))
-		{
-			$wa->useStyle('plg_content_contentcart.jlcontentcart');
-		}
-	}
-	catch (\Exception $e)
-	{
-		// Asset not available, silently continue
-	}
-}
+// PERF-005: CSS is loaded centrally by the plugin in onAfterRoute, no need to load here
 ?>
 
 <div class="content_cart jlcontentcart<?php echo $moduleclass_sfx; ?>">

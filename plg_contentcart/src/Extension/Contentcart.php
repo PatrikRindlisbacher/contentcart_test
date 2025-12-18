@@ -42,6 +42,38 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	protected $autoloadLanguage = true;
 
 	/**
+	 * Cache for cart data from session (Performance optimization)
+	 *
+	 * @var    array|null
+	 * @since  3.0.1
+	 */
+	private ?array $cartCache = null;
+
+	/**
+	 * Cache for category IDs filter (Performance optimization)
+	 *
+	 * @var    array|null
+	 * @since  3.0.1
+	 */
+	private ?array $catidsCache = null;
+
+	/**
+	 * Cache for application areas (Performance optimization)
+	 *
+	 * @var    array|null
+	 * @since  3.0.1
+	 */
+	private ?array $applicationAreasCache = null;
+
+	/**
+	 * Cache for cart URL (Performance optimization)
+	 *
+	 * @var    string|null
+	 * @since  3.0.1
+	 */
+	private ?string $cartUrlCache = null;
+
+	/**
 	 * Returns an array of events this subscriber will listen to.
 	 *
 	 * @return  array
@@ -53,14 +85,12 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		return [
 			'onAfterRoute'           => 'onAfterRoute',
 			'onContentAfterDisplay'  => 'onContentAfterDisplay',
-			'onContentBeforeDisplay' => 'onContentBeforeDisplay',
-			'onContentAfterTitle'    => 'onContentAfterTitle',
 			'onContentPrepare'       => 'onContentPrepare',
 		];
 	}
 
 	/**
-	 * Register WebAsset file on early routing event
+	 * Register WebAsset file and load CSS on early routing event
 	 *
 	 * @return  void
 	 *
@@ -68,18 +98,154 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	 */
 	public function onAfterRoute(): void
 	{
-		if ($this->getApplication()->isClient('site'))
+		if (!$this->getApplication()->isClient('site'))
 		{
-			try
+			return;
+		}
+
+		try
+		{
+			// Register asset file early
+			$wa = Factory::getContainer()->get(WebAssetRegistry::class);
+			$wa->addRegistryFile('media/plg_content_contentcart/joomla.asset.json');
+		}
+		catch (\Exception $e)
+		{
+			if ($this->getApplication()->get('debug'))
 			{
-				$wa = Factory::getContainer()->get(WebAssetRegistry::class);
-				$wa->addRegistryFile('media/plg_content_contentcart/joomla.asset.json');
-			}
-			catch (\Exception $e)
-			{
-				$this->getApplication()->enqueueMessage('ContentCart Asset Registration Error: ' . $e->getMessage(), 'error');
+				$this->getApplication()->enqueueMessage('ContentCart Asset Registration Error: ' . $e->getMessage(), 'warning');
 			}
 		}
+	}
+
+	/**
+	 * Flag to track if CSS was already loaded
+	 *
+	 * @var    boolean
+	 * @since  3.0.1
+	 */
+	private bool $cssLoaded = false;
+
+	/**
+	 * Load CSS if enabled (called once per request)
+	 *
+	 * @return  void
+	 *
+	 * @since   3.0.1
+	 */
+	private function loadCss(): void
+	{
+		// Only load once per request
+		if ($this->cssLoaded || !$this->params->get('enable_css', 1))
+		{
+			return;
+		}
+
+		$this->cssLoaded = true;
+
+		try
+		{
+			$app = $this->getApplication();
+			$document = $app->getDocument();
+
+			// Ensure document is HtmlDocument
+			if ($document instanceof \Joomla\CMS\Document\HtmlDocument)
+			{
+				$wam = $document->getWebAssetManager();
+				if ($wam->assetExists('style', 'plg_content_contentcart.jlcontentcart'))
+				{
+					$wam->useStyle('plg_content_contentcart.jlcontentcart');
+				}
+			}
+		}
+		catch (\Exception $e)
+		{
+			if ($this->getApplication()->get('debug'))
+			{
+				$this->getApplication()->enqueueMessage('ContentCart CSS Load Error: ' . $e->getMessage(), 'warning');
+			}
+		}
+	}
+
+	/**
+	 * Get cart data from session with caching (Performance optimization)
+	 *
+	 * @return  array  Cart data
+	 *
+	 * @since   3.0.1
+	 */
+	private function getCartData(): array
+	{
+		if ($this->cartCache === null)
+		{
+			$this->cartCache = $this->getApplication()->getSession()->get('content_order', []);
+
+			if (!is_array($this->cartCache))
+			{
+				$this->cartCache = [];
+			}
+		}
+
+		return $this->cartCache;
+	}
+
+	/**
+	 * Get category IDs filter with caching (Performance optimization)
+	 *
+	 * @return  array  Category IDs
+	 *
+	 * @since   3.0.1
+	 */
+	private function getCategoryIds(): array
+	{
+		if ($this->catidsCache === null)
+		{
+			$this->catidsCache = $this->params->get('catid', []);
+		}
+
+		return $this->catidsCache;
+	}
+
+	/**
+	 * Get application areas with caching (Performance optimization)
+	 *
+	 * @return  array  Application areas
+	 *
+	 * @since   3.0.1
+	 */
+	private function getApplicationAreas(): array
+	{
+		if ($this->applicationAreasCache === null)
+		{
+			$this->applicationAreasCache = $this->params->get('application_area', []);
+		}
+
+		return $this->applicationAreasCache;
+	}
+
+	/**
+	 * Get cart URL with caching (Performance optimization)
+	 *
+	 * @return  string  Cart URL
+	 *
+	 * @since   3.0.1
+	 */
+	private function getCartUrl(): string
+	{
+		if ($this->cartUrlCache === null)
+		{
+			$menuItem = $this->params->get('mymenuitem');
+			if ($menuItem)
+			{
+				$this->cartUrlCache = Route::_("index.php?Itemid=" . $menuItem);
+			}
+			else
+			{
+				$this->cartUrlCache = '';
+			}
+		}
+
+		return $this->cartUrlCache;
 	}
 
 	/**
@@ -111,23 +277,16 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		// Проверка, что кнопка еще не была добавлена (skip if requested)
 		if (!$skipFlagCheck && isset($article->contentcart_button_added) && $article->contentcart_button_added === true)
 		{
+			// PERF-003: Removed expensive debug_backtrace() call
 			if ($debug)
 			{
-				// Debug: show stack trace to find WHO set this flag
-				$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
-				$caller = '';
-				foreach ($trace as $t) {
-					if (isset($t['file']) && isset($t['line'])) {
-						$caller .= basename($t['file']) . ':' . $t['line'] . ' -> ';
-					}
-				}
-				$app->enqueueMessage('shouldDisplayButton: Button already added for article ' . $article->id . ' (context: ' . $context . ', called from: ' . $caller . ')', 'warning');
+				$app->enqueueMessage('shouldDisplayButton: Button already added for article ' . $article->id . ' (context: ' . $context . ')', 'warning');
 			}
 			return false;
 		}
 
-		// Проверка фильтра по категориям
-		$catids = $this->params->get('catid', []);
+		// PERF-006: Use cached category IDs instead of accessing params every time
+		$catids = $this->getCategoryIds();
 		if (!empty($catids) && is_array($catids))
 		{
 			if (
@@ -143,8 +302,8 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			}
 		}
 
-		// Проверка application_area
-		$applicationAreas = $this->params->get('application_area', []);
+		// PERF-006: Use cached application areas instead of accessing params every time
+		$applicationAreas = $this->getApplicationAreas();
 		if ($debug)
 		{
 			$app->enqueueMessage('shouldDisplayButton: application_area=' . json_encode($applicationAreas) . ', context=' . $context . ', in_array=' . (in_array($context, $applicationAreas) ? 'true' : 'false'), 'info');
@@ -216,9 +375,25 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		$input   = $app->getInput();
 		$session = $app->getSession();
 
-		// Handle mail sending
+		// Handle mail sending (order submission)
 		if ($input->getInt('mail') && !$input->getInt('nosend'))
 		{
+			// CSRF Protection for order submission
+			if (!Session::checkToken())
+			{
+				$app->enqueueMessage(Text::_('JINVALID_TOKEN'), 'error');
+				// Redirect back to cart without processing order
+				if ($cart_url)
+				{
+					$app->redirect($cart_url);
+				}
+				else
+				{
+					$app->redirect(Route::_('index.php'));
+				}
+				return;
+			}
+
 			$content_order = $session->get('content_order', []);
 			ContentcartHelper::sendOrderEmail($this->params, $content_order);
 		}
@@ -250,6 +425,43 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	}
 
 	/**
+	 * Get price from article's custom field (server-side validation)
+	 *
+	 * @param   object  $article  Article object
+	 *
+	 * @return  float  Price value or 0.0 if not found
+	 *
+	 * @since   3.0.1
+	 */
+	private function getPriceFromArticle(object $article): float
+	{
+		// Check if pricing is enabled
+		if ($this->params->get('using_price') != '1')
+		{
+			return 0.0;
+		}
+
+		$priceFieldId = $this->params->get('price_id');
+
+		// Validate price field ID exists
+		if (empty($priceFieldId))
+		{
+			return 0.0;
+		}
+
+		// Get price from article's custom fields
+		if (isset($article->jcfields[$priceFieldId]) && !empty($article->jcfields[$priceFieldId]->value))
+		{
+			$price = (float) $article->jcfields[$priceFieldId]->value;
+
+			// Ensure price is not negative
+			return max(0.0, $price);
+		}
+
+		return 0.0;
+	}
+
+	/**
 	 * Handle add to cart action
 	 *
 	 * @param   object  $article  Article object
@@ -267,6 +479,14 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		// Handle add to cart action
 		if (!$input->getInt('add'))
 		{
+			return;
+		}
+
+		// CSRF Protection
+		if (!Session::checkToken())
+		{
+			$app->enqueueMessage(Text::_('JINVALID_TOKEN'), 'error');
+			$app->redirect(Route::_('index.php'));
 			return;
 		}
 
@@ -299,12 +519,15 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 
 		if ($article_id == $article->id && $is_in_cart === false)
 		{
+			// Get price from server-side (secure - not from POST data)
+			$price = $this->getPriceFromArticle($article);
+
 			$content_order[] = [
 				'article_id' => $article_id,
 				'title'      => $input->getString('title'),
 				'link'       => $input->getString('link'),
 				'count'      => $input->getInt('count', 1),
-				'price'      => $input->getFloat('price', 0.0),
+				'price'      => $price,
 			];
 			$msg = Text::_('PLG_CONTENT_CONTENTCART_ADDED');
 			$session->set('content_order', $content_order);
@@ -380,35 +603,8 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		}
 	}
 
-	/**
-	 * Content after title event - adds button directly to content
-	 *
-	 * @param   Event  $event  The event object
-	 *
-	 * @return  string
-	 *
-	 * @since   2.0.0
-	 */
-	public function onContentAfterTitle(Event $event): string
-	{
-		// Use the same logic as afterDisplay
-		return $this->onContentAfterDisplay($event);
-	}
-
-	/**
-	 * Content before display event (alternative to afterDisplay for better compatibility)
-	 *
-	 * @param   Event  $event  The event object
-	 *
-	 * @return  string
-	 *
-	 * @since   2.0.0
-	 */
-	public function onContentBeforeDisplay(Event $event): string
-	{
-		// Use the same logic as afterDisplay
-		return $this->onContentAfterDisplay($event);
-	}
+	// PERF-002: Removed onContentAfterTitle and onContentBeforeDisplay
+	// These were redundant wrappers causing unnecessary event processing
 
 	/**
 	 * Content after display event (fallback for custom templates)
@@ -421,6 +617,9 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	 */
 	public function onContentAfterDisplay(Event $event): string
 	{
+		// PERF-005: Load CSS once when content is being displayed
+		$this->loadCss();
+
 		// Extract parameters from event
 		$context = $event->getArgument('context');
 		$row     = $event->getArgument('item');
@@ -475,13 +674,8 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			}
 		}
 
-		// Get URLs
-		$cart_url = '';
-		$menuItem = $this->params->get('mymenuitem');
-		if ($menuItem)
-		{
-			$cart_url = Route::_("index.php?Itemid=" . $menuItem);
-		}
+		// PERF-006: Use cached cart URL instead of rebuilding every time
+		$cart_url = $this->getCartUrl();
 
 		$link = Route::_(\Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute(
 			$row->slug,
@@ -514,6 +708,9 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	 */
 	public function onContentPrepare(ContentPrepareEvent $event): void
 	{
+		// PERF-005: Load CSS once when content is being prepared
+		$this->loadCss();
+
 		// Extract parameters from event
 		$context = $event->getContext();
 		$article = $event->getItem();
@@ -551,13 +748,8 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		// Handle delete action first (before any content manipulation)
 		$this->handleDelete();
 
-		// Get URLs
-		$cart_url = '';
-		$menuItem = $this->params->get('mymenuitem');
-		if ($menuItem)
-		{
-			$cart_url = Route::_("index.php?Itemid=" . $menuItem);
-		}
+		// PERF-006: Use cached cart URL instead of rebuilding every time
+		$cart_url = $this->getCartUrl();
 
 		$link = Route::_(\Joomla\Component\Content\Site\Helper\RouteHelper::getArticleRoute(
 			$article->slug,
