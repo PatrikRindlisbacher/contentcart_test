@@ -57,6 +57,13 @@ final class ContentcartHelper
 		$clientPhone = $filter->clean($input->getString('client_phone'), 'STRING');
 		$clientNote  = $filter->clean($input->getString('client_note', ''), 'STRING');
 
+		// Validate email address if provided
+		if (!empty($clientEmail) && !filter_var($clientEmail, FILTER_VALIDATE_EMAIL))
+		{
+			$app->enqueueMessage(Text::_('PLG_CONTENT_CONTENTCART_INVALID_EMAIL'), 'error');
+			return false;
+		}
+
 		// Get mailer using new MailerFactory API
 		try
 		{

@@ -25,6 +25,11 @@
             return;
         }
 
+        // Получить языковые строки
+        const texts = window.Joomla && window.Joomla.getOptions
+            ? window.Joomla.getOptions('ContentCartText')
+            : window.ContentCartText || {};
+
         // Инициализировать корзину
         const cart = new ContentCart(options);
 
@@ -119,13 +124,13 @@
 
                     if (success) {
                         // Показать сообщение об успехе
-                        showMessage('success', 'Товар добавлен в корзину');
+                        showMessage('success', texts.itemAdded || 'Item added to cart');
 
                         // Обновить состояние кнопки (показать количество с редактором)
                         updateButtonState(button, cart);
                     } else {
                         button.disabled = false;
-                        showMessage('error', 'Ошибка добавления товара');
+                        showMessage('error', texts.itemAddError || 'Error adding item');
                     }
                 } catch (error) {
                     // Скрыть loader
@@ -133,7 +138,7 @@
                         loader.style.display = 'none';
                     }
                     button.disabled = false;
-                    showMessage('error', 'Ошибка добавления товара');
+                    showMessage('error', texts.itemAddError || 'Error adding item');
                     console.error('[ContentCart]', error);
                 }
             });
@@ -155,7 +160,7 @@
 
                 const articleId = parseInt(this.dataset.articleId);
 
-                if (!confirm('Удалить товар из корзины?')) {
+                if (!confirm(texts.confirmDelete || 'Remove item from cart?')) {
                     return;
                 }
 
@@ -172,9 +177,9 @@
                         }, 300);
                     }
 
-                    showMessage('success', 'Товар удален из корзины');
+                    showMessage('success', texts.itemRemoved || 'Item removed from cart');
                 } else {
-                    showMessage('error', 'Ошибка удаления товара');
+                    showMessage('error', texts.itemRemoveError || 'Error removing item');
                 }
             });
         });
@@ -188,7 +193,7 @@
                 const newCount = parseInt(this.value);
 
                 if (isNaN(newCount) || newCount < 1 || newCount > 999) {
-                    showMessage('error', 'Недопустимое количество (1-999)');
+                    showMessage('error', texts.invalidQuantity || 'Invalid quantity (1-999)');
                     return;
                 }
 
@@ -196,9 +201,9 @@
 
                 if (success) {
                     updateCartTotals();
-                    showMessage('success', 'Количество обновлено');
+                    showMessage('success', texts.quantityUpdated || 'Quantity updated');
                 } else {
-                    showMessage('error', 'Ошибка обновления количества');
+                    showMessage('error', texts.quantityUpdateError || 'Error updating quantity');
                 }
             });
         });
@@ -305,14 +310,14 @@
                             if (newCount > 0 && newCount <= 999) {
                                 const success = cart.updateCount(articleId, newCount);
                                 if (success) {
-                                    showMessage('success', 'Количество обновлено: ' + newCount);
+                                    showMessage('success', texts.quantityUpdated || 'Quantity updated');
                                     // Кнопка остаётся без изменений - количество только в счётчике
                                 } else {
-                                    showMessage('error', 'Ошибка обновления количества');
+                                    showMessage('error', texts.quantityUpdateError || 'Error updating quantity');
                                     this.value = item.count;
                                 }
                             } else {
-                                showMessage('error', 'Недопустимое количество (1-999)');
+                                showMessage('error', texts.invalidQuantity || 'Invalid quantity (1-999)');
                                 this.value = item.count;
                             }
                         });
@@ -339,7 +344,7 @@
             const cartData = cart.getCart();
             const using_price = options.currency && options.currency.length > 0;
 
-            let html = '<p>Товары загружены из вашего браузера:</p>';
+            let html = '<p>' + (texts.itemsFromBrowser || 'Items loaded from your browser:') + '</p>';
             html += '<table style="width:100%;"><thead><tr>';
             html += '<th>№</th><th>Наименование</th><th>Количество</th>';
             if (using_price) {
@@ -375,7 +380,7 @@
             }
 
             html += '</tbody></table>';
-            html += '<p><em>Примечание: для отправки заказа необходимо обновить страницу, чтобы синхронизировать данные.</em></p>';
+            html += '<p><em>' + (texts.syncNote || 'Note: to submit an order, you need to refresh the page to synchronize data.') + '</em></p>';
 
             container.innerHTML = html;
 
@@ -428,7 +433,7 @@
                     e.preventDefault();
                     const articleId = parseInt(this.dataset.articleId);
 
-                    if (confirm('Удалить товар из корзины?')) {
+                    if (confirm(texts.confirmDelete || 'Remove item from cart?')) {
                         cart.removeItem(articleId);
                         // Перерендерить таблицу
                         renderCartTable(cart, container, options);

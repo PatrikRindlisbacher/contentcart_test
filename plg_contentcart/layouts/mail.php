@@ -15,16 +15,29 @@ use Joomla\Registry\Registry;
 
 /**
  * Layout variables
- * @var Registry $params
- * @var array    $content_order
- * @var string   $client_name
- * @var string   $client_email
- * @var string   $client_phone
- * @var string   $client_note
- * @var string   $title_note
+ * @var array    $displayData   Display data array
+ * @var Registry $params        Plugin parameters
+ * @var array    $content_order Cart content
+ * @var string   $client_name   Client name
+ * @var string   $client_email  Client email
+ * @var string   $client_phone  Client phone
+ * @var string   $client_note   Client note
+ * @var string   $title_note    Note title
  */
 
-extract($displayData);
+// Extract variables safely without using extract()
+$params        = $displayData['params'] ?? null;
+$content_order = $displayData['content_order'] ?? [];
+$client_name   = $displayData['client_name'] ?? '';
+$client_email  = $displayData['client_email'] ?? '';
+$client_phone  = $displayData['client_phone'] ?? '';
+$client_note   = $displayData['client_note'] ?? '';
+$title_note    = $displayData['title_note'] ?? '';
+
+// Safety check
+if (!$params || !is_array($content_order)) {
+	return;
+}
 ?>
 <h2><?php echo Text::_('PLG_CONTENT_CONTENTCART_ORDER_INFO'); ?></h2>
 <table style="width:100%;">

@@ -28,6 +28,12 @@
             this.ttlDays = options.ttlDays || 30;
             this.currency = options.currency || '';
 
+            // Get language strings from Joomla
+            const texts = window.Joomla && window.Joomla.getOptions
+                ? window.Joomla.getOptions('ContentCartText')
+                : window.ContentCartText || {};
+            this.texts = texts;
+
             // Инициализация
             this.init();
         }
@@ -109,7 +115,7 @@
                 localStorage.setItem(this.storageKey, JSON.stringify(cart));
             } catch (e) {
                 if (e.name === 'QuotaExceededError') {
-                    alert('Превышен лимит хранилища корзины');
+                    alert(this.texts.quotaExceeded || 'Cart storage limit exceeded');
                 }
                 console.error('[ContentCart] Ошибка сохранения:', e);
             }
@@ -135,13 +141,13 @@
                 if (!response.ok) {
                     const text = await response.text();
                     console.error('[ContentCart] Response error:', text);
-                    throw new Error('Ошибка запроса цены');
+                    throw new Error(this.texts.priceRequestError || 'Price request error');
                 }
 
                 const result = await response.json();
 
                 if (!result.success) {
-                    throw new Error(result.message || 'Ошибка получения цены');
+                    throw new Error(result.message || this.texts.priceFetchError || 'Error fetching price');
                 }
 
                 // Joomla's AJAX format with plugin events: {success: true, data: [{price: X}]}

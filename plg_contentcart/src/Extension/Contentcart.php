@@ -91,6 +91,24 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	}
 
 	/**
+	 * Log debug message (only in debug mode)
+	 *
+	 * @param   string  $message  Debug message
+	 * @param   string  $type     Message type (info, warning, error, success)
+	 *
+	 * @return  void
+	 *
+	 * @since   4.0.0
+	 */
+	private function debugLog(string $message, string $type = 'info'): void
+	{
+		if ($this->getApplication()->get('debug'))
+		{
+			$this->getApplication()->enqueueMessage('[ContentCart] ' . $message, $type);
+		}
+	}
+
+	/**
 	 * Register WebAsset file and load CSS on early routing event
 	 *
 	 * @return  void
@@ -488,54 +506,68 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	 */
 	private function getPriceFromArticle(object $article): float
 	{
-		error_log('[ContentCart] getPriceFromArticle called');
-
 		$app = $this->getApplication();
 
 		// Check if pricing is enabled
 		$using_price = $this->params->get('using_price');
-		error_log('[ContentCart] getPriceFromArticle - using_price param: ' . var_export($using_price, true));
 
 		if ($using_price != '1')
 		{
-			error_log('[ContentCart] getPriceFromArticle - pricing disabled');
 			return 0.0;
 		}
 
 		$priceFieldId = $this->params->get('price_id');
-		error_log('[ContentCart] getPriceFromArticle - price_id param: ' . var_export($priceFieldId, true));
 
 		// Validate price field ID exists
 		if (empty($priceFieldId))
 		{
-			error_log('[ContentCart] getPriceFromArticle - price_id not configured or empty');
+			if ($app->get('debug'))
+			{
+				error_log('[ContentCart] getPriceFromArticle - price_id not configured or empty');
+			}
 			return 0.0;
 		}
 
-		error_log('[ContentCart] getPriceFromArticle - looking for field ID: ' . $priceFieldId);
-		error_log('[ContentCart] getPriceFromArticle - available fields: ' . (isset($article->jcfields) ? implode(', ', array_keys($article->jcfields)) : 'none'));
+		if ($app->get('debug'))
+		{
+			error_log('[ContentCart] getPriceFromArticle - looking for field ID: ' . $priceFieldId);
+			error_log('[ContentCart] getPriceFromArticle - available fields: ' . (isset($article->jcfields) ? implode(', ', array_keys($article->jcfields)) : 'none'));
+		}
 
 		// Get price from article's custom fields
 		if (isset($article->jcfields[$priceFieldId]))
 		{
-			error_log('[ContentCart] getPriceFromArticle - field exists, value: ' . var_export($article->jcfields[$priceFieldId]->value ?? 'NO VALUE', true));
+			if ($app->get('debug'))
+			{
+				error_log('[ContentCart] getPriceFromArticle - field exists, value: ' . var_export($article->jcfields[$priceFieldId]->value ?? 'NO VALUE', true));
+			}
 
 			if (!empty($article->jcfields[$priceFieldId]->value))
 			{
 				$price = (float) $article->jcfields[$priceFieldId]->value;
-				error_log('[ContentCart] getPriceFromArticle - found price: ' . $price);
+
+				if ($app->get('debug'))
+				{
+					error_log('[ContentCart] getPriceFromArticle - found price: ' . $price);
+				}
 
 				// Ensure price is not negative
 				return max(0.0, $price);
 			}
 			else
 			{
-				error_log('[ContentCart] getPriceFromArticle - field value is empty');
+				if ($app->get('debug'))
+				{
+					error_log('[ContentCart] getPriceFromArticle - field value is empty');
+				}
 			}
 		}
 		else
 		{
-			error_log('[ContentCart] getPriceFromArticle - field ID ' . $priceFieldId . ' not found in jcfields');
+			if ($app->get('debug'))
+			{
+				error_log('[ContentCart] getPriceFromArticle - field ID ' . $priceFieldId . ' not found in jcfields');
+			}
 		}
 
 		return 0.0;
@@ -602,11 +634,15 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			// Get price from server-side (secure - not from POST data)
 			$price = $this->getPriceFromArticle($article);
 
+			// Get and validate count (enforce limits on server-side)
+			$count = $input->getInt('count', 1);
+			$count = max(1, min(999, $count)); // Enforce 1-999 range
+
 			$content_order[] = [
 				'article_id' => $article_id,
 				'title'      => $input->getString('title'),
 				'link'       => $input->getString('link'),
-				'count'      => $input->getInt('count', 1),
+				'count'      => $count,
 				'price'      => $price,
 			];
 			$msg = Text::_('PLG_CONTENT_CONTENTCART_ADDED');
@@ -1060,6 +1096,25 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 
 			$document->addScriptOptions('ContentCartOptions', $options);
 
+			// Add language strings for JavaScript
+			$texts = [
+				'quotaExceeded'       => Text::_('PLG_CONTENT_CONTENTCART_JS_QUOTA_EXCEEDED'),
+				'priceRequestError'   => Text::_('PLG_CONTENT_CONTENTCART_JS_PRICE_REQUEST_ERROR'),
+				'priceFetchError'     => Text::_('PLG_CONTENT_CONTENTCART_JS_PRICE_FETCH_ERROR'),
+				'itemAdded'           => Text::_('PLG_CONTENT_CONTENTCART_JS_ITEM_ADDED'),
+				'itemAddError'        => Text::_('PLG_CONTENT_CONTENTCART_JS_ITEM_ADD_ERROR'),
+				'confirmDelete'       => Text::_('PLG_CONTENT_CONTENTCART_JS_CONFIRM_DELETE'),
+				'itemRemoved'         => Text::_('PLG_CONTENT_CONTENTCART_JS_ITEM_REMOVED'),
+				'itemRemoveError'     => Text::_('PLG_CONTENT_CONTENTCART_JS_ITEM_REMOVE_ERROR'),
+				'invalidQuantity'     => Text::_('PLG_CONTENT_CONTENTCART_JS_INVALID_QUANTITY'),
+				'quantityUpdated'     => Text::_('PLG_CONTENT_CONTENTCART_JS_QUANTITY_UPDATED'),
+				'quantityUpdateError' => Text::_('PLG_CONTENT_CONTENTCART_JS_QUANTITY_UPDATE_ERROR'),
+				'itemsFromBrowser'    => Text::_('PLG_CONTENT_CONTENTCART_JS_ITEMS_FROM_BROWSER'),
+				'syncNote'            => Text::_('PLG_CONTENT_CONTENTCART_JS_SYNC_NOTE'),
+			];
+
+			$document->addScriptOptions('ContentCartText', $texts);
+
 			// Load JavaScript files (with defer attribute, will execute after DOM ready)
 			$wam->useScript('plg_content_contentcart.contentcart');
 			$wam->useScript('plg_content_contentcart.contentcart-init');
@@ -1149,42 +1204,50 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	 */
 	private function getPriceAjax()
 	{
-		error_log('[ContentCart] getPriceAjax called');
-
 		$app = $this->getApplication();
 		$input = $app->input;
 
 		$articleId = $input->getInt('article_id', 0);
-		error_log('[ContentCart] getPriceAjax - article_id from input: ' . $articleId);
 
 		if ($articleId <= 0)
 		{
-			error_log('[ContentCart] getPriceAjax - invalid article_id');
+			if ($app->get('debug'))
+			{
+				error_log('[ContentCart] getPriceAjax - invalid article_id: ' . $articleId);
+			}
 			throw new \Exception('Invalid article_id', 400);
 		}
 
 		// Загрузить статью
-		error_log('[ContentCart] getPriceAjax - loading article...');
 		$article = $this->loadArticle($articleId);
 
 		if (!$article)
 		{
-			error_log('[ContentCart] getPriceAjax - article not found');
+			if ($app->get('debug'))
+			{
+				error_log('[ContentCart] getPriceAjax - article not found: ' . $articleId);
+			}
 			throw new \Exception('Article not found', 404);
 		}
 
-		error_log('[ContentCart] getPriceAjax - article loaded successfully');
-		error_log('[ContentCart] getPriceAjax - has jcfields: ' . (isset($article->jcfields) ? 'yes' : 'no'));
-		if (isset($article->jcfields))
+		if ($app->get('debug'))
 		{
-			error_log('[ContentCart] getPriceAjax - jcfields count: ' . count($article->jcfields));
-			error_log('[ContentCart] getPriceAjax - jcfields keys: ' . implode(', ', array_keys($article->jcfields)));
+			error_log('[ContentCart] getPriceAjax - article loaded successfully: ' . $articleId);
+			error_log('[ContentCart] getPriceAjax - has jcfields: ' . (isset($article->jcfields) ? 'yes' : 'no'));
+			if (isset($article->jcfields))
+			{
+				error_log('[ContentCart] getPriceAjax - jcfields count: ' . count($article->jcfields));
+				error_log('[ContentCart] getPriceAjax - jcfields keys: ' . implode(', ', array_keys($article->jcfields)));
+			}
 		}
 
 		// Получить цену
-		error_log('[ContentCart] getPriceAjax - getting price from article...');
 		$price = $this->getPriceFromArticle($article);
-		error_log('[ContentCart] getPriceAjax - price returned: ' . $price);
+
+		if ($app->get('debug'))
+		{
+			error_log('[ContentCart] getPriceAjax - price returned: ' . $price);
+		}
 
 		// Вернуть данные - Joomla автоматически сериализует в JSON
 		$result = (object) [
@@ -1198,7 +1261,12 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 				'price_field_id' => $this->params->get('price_id'),
 			]
 		];
-		error_log('[ContentCart] getPriceAjax - returning: ' . json_encode($result));
+
+		if ($app->get('debug'))
+		{
+			error_log('[ContentCart] getPriceAjax - returning: ' . json_encode($result));
+		}
+
 		return $result;
 	}
 
