@@ -61,12 +61,20 @@ if (!$in_cart && $link !== $cart_url)
 	?>
 	<!-- ContentCart: Add to cart button START -->
 	<div class="jlcontentcart">
-		<form action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>" method="post">
+		<form action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>" method="post" class="jlcc-add-form">
 			<input type="hidden" name="add" value="1"/>
 			<input type="hidden" name="article_id" value="<?php echo (int) $row->id; ?>"/>
 			<input type="hidden" name="title" value="<?php echo htmlspecialchars($row->title, ENT_QUOTES, 'UTF-8'); ?>"/>
 			<input type="hidden" name="link" value="<?php echo htmlspecialchars($link, ENT_QUOTES, 'UTF-8'); ?>"/>
-			<input type="submit" class="jlcc-button jlcc-primary" value="<?php echo Text::_('PLG_CONTENT_CONTENTCART_ADD_TO_CART'); ?>"/>
+			<button type="submit"
+					class="jlcc-button jlcc-primary jlcc-add-to-cart"
+					data-article-id="<?php echo (int) $row->id; ?>"
+					data-title="<?php echo htmlspecialchars($row->title, ENT_QUOTES, 'UTF-8'); ?>"
+					data-link="<?php echo htmlspecialchars($link, ENT_QUOTES, 'UTF-8'); ?>"
+					data-text-in-cart="<?php echo Text::_('PLG_CONTENT_CONTENTCART_IN_CART'); ?>">
+				<?php echo Text::_('PLG_CONTENT_CONTENTCART_ADD_TO_CART'); ?>
+			</button>
+			<span class="jlcc-loader" style="display:none;">⏳</span>
 			<input type="number" name="count" max="999" min="1" value="1" class="jlcc-input jlcc-count">
 			<?php echo HTMLHelper::_('form.token'); ?>
 		</form>

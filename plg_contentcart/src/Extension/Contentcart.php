@@ -86,6 +86,7 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			'onAfterRoute'           => 'onAfterRoute',
 			'onContentAfterDisplay'  => 'onContentAfterDisplay',
 			'onContentPrepare'       => 'onContentPrepare',
+			'onAjaxContentcart'      => 'onAjaxContentcart',
 		];
 	}
 
@@ -107,7 +108,26 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		{
 			// Register asset file early
 			$wa = Factory::getContainer()->get(WebAssetRegistry::class);
-			$wa->addRegistryFile('media/plg_content_contentcart/joomla.asset.json');
+
+			// Try to register from file first
+			$assetFile = JPATH_ROOT . '/media/plg_content_contentcart/joomla.asset.json';
+			if (file_exists($assetFile))
+			{
+				$wa->addRegistryFile('media/plg_content_contentcart/joomla.asset.json');
+			}
+			else
+			{
+				// Fallback: register assets manually
+				$wa->addRegistryFile('media/plg_content_contentcart/joomla.asset.json');
+
+				// Also register manually as fallback
+				$this->registerAssetsFallback($wa);
+
+				if ($this->getApplication()->get('debug'))
+				{
+					$this->getApplication()->enqueueMessage('ContentCart: Asset file not found at ' . $assetFile . ', using fallback registration', 'warning');
+				}
+			}
 		}
 		catch (\Exception $e)
 		{
@@ -115,6 +135,46 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			{
 				$this->getApplication()->enqueueMessage('ContentCart Asset Registration Error: ' . $e->getMessage(), 'warning');
 			}
+		}
+	}
+
+	/**
+	 * Register assets manually (fallback if joomla.asset.json not found)
+	 *
+	 * @param   WebAssetRegistry  $wa  WebAsset Registry
+	 *
+	 * @return  void
+	 *
+	 * @since   4.0.0
+	 */
+	private function registerAssetsFallback(WebAssetRegistry $wa): void
+	{
+		try
+		{
+			// Register CSS
+			$wa->add('style', new \Joomla\CMS\WebAsset\WebAssetItem(
+				'plg_content_contentcart.jlcontentcart',
+				'plg_content_contentcart/css/jlcontentcart.css',
+				['type' => 'style']
+			));
+
+			// Register main JS
+			$wa->add('script', new \Joomla\CMS\WebAsset\WebAssetItem(
+				'plg_content_contentcart.contentcart',
+				'plg_content_contentcart/js/contentcart.js',
+				['type' => 'script', 'attributes' => ['defer' => true]]
+			));
+
+			// Register init JS
+			$wa->add('script', new \Joomla\CMS\WebAsset\WebAssetItem(
+				'plg_content_contentcart.contentcart-init',
+				'plg_content_contentcart/js/contentcart-init.js',
+				['type' => 'script', 'dependencies' => ['plg_content_contentcart.contentcart'], 'attributes' => ['defer' => true]]
+			));
+		}
+		catch (\Exception $e)
+		{
+			// Silent fail
 		}
 	}
 
@@ -152,10 +212,7 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			if ($document instanceof \Joomla\CMS\Document\HtmlDocument)
 			{
 				$wam = $document->getWebAssetManager();
-				if ($wam->assetExists('style', 'plg_content_contentcart.jlcontentcart'))
-				{
-					$wam->useStyle('plg_content_contentcart.jlcontentcart');
-				}
+				$wam->useStyle('plg_content_contentcart.jlcontentcart');
 			}
 		}
 		catch (\Exception $e)
@@ -394,33 +451,29 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 				return;
 			}
 
-			$content_order = $session->get('content_order', []);
+			// Try to get cart data from POST (localStorage), fallback to session
+			$content_order = $this->getCartDataFromRequest($session);
 			ContentcartHelper::sendOrderEmail($this->params, $content_order);
 		}
 
-		$content_order = $session->get('content_order', []);
+		// Try to get cart data from POST (localStorage), fallback to session
+		$content_order = $this->getCartDataFromRequest($session);
 
-		if (!empty($content_order))
+		// ALWAYS render cart layout (even if session is empty, localStorage may have items)
+		// JavaScript will render items from localStorage if session is empty
+		$displayData = [
+			'content_order' => $content_order,
+			'params'        => $this->params,
+			'session'       => $session,
+		];
+
+		// Render cart layout from plugin's layouts folder
+		$article->text = LayoutHelper::render('cart', $displayData, JPATH_PLUGINS . '/content/contentcart/layouts');
+
+		if (!$this->params->get('mymenuitem'))
 		{
-			// Prepare display data for cart layout
-			$displayData = [
-				'content_order' => $content_order,
-				'params'        => $this->params,
-				'session'       => $session,
-			];
-
-			// Render cart layout from plugin's layouts folder
-			$article->text = LayoutHelper::render('cart', $displayData, JPATH_PLUGINS . '/content/contentcart/layouts');
-
-			if (!$this->params->get('mymenuitem'))
-			{
-				$doc = $app->getDocument();
-				$doc->setTitle(Text::_('PLG_CONTENT_CONTENTCART_SHOPPING_CART'));
-			}
-		}
-		elseif ($link != $cart_url)
-		{
-			$app->redirect($link);
+			$doc = $app->getDocument();
+			$doc->setTitle(Text::_('PLG_CONTENT_CONTENTCART_SHOPPING_CART'));
 		}
 	}
 
@@ -435,27 +488,54 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 	 */
 	private function getPriceFromArticle(object $article): float
 	{
+		error_log('[ContentCart] getPriceFromArticle called');
+
+		$app = $this->getApplication();
+
 		// Check if pricing is enabled
-		if ($this->params->get('using_price') != '1')
+		$using_price = $this->params->get('using_price');
+		error_log('[ContentCart] getPriceFromArticle - using_price param: ' . var_export($using_price, true));
+
+		if ($using_price != '1')
 		{
+			error_log('[ContentCart] getPriceFromArticle - pricing disabled');
 			return 0.0;
 		}
 
 		$priceFieldId = $this->params->get('price_id');
+		error_log('[ContentCart] getPriceFromArticle - price_id param: ' . var_export($priceFieldId, true));
 
 		// Validate price field ID exists
 		if (empty($priceFieldId))
 		{
+			error_log('[ContentCart] getPriceFromArticle - price_id not configured or empty');
 			return 0.0;
 		}
 
-		// Get price from article's custom fields
-		if (isset($article->jcfields[$priceFieldId]) && !empty($article->jcfields[$priceFieldId]->value))
-		{
-			$price = (float) $article->jcfields[$priceFieldId]->value;
+		error_log('[ContentCart] getPriceFromArticle - looking for field ID: ' . $priceFieldId);
+		error_log('[ContentCart] getPriceFromArticle - available fields: ' . (isset($article->jcfields) ? implode(', ', array_keys($article->jcfields)) : 'none'));
 
-			// Ensure price is not negative
-			return max(0.0, $price);
+		// Get price from article's custom fields
+		if (isset($article->jcfields[$priceFieldId]))
+		{
+			error_log('[ContentCart] getPriceFromArticle - field exists, value: ' . var_export($article->jcfields[$priceFieldId]->value ?? 'NO VALUE', true));
+
+			if (!empty($article->jcfields[$priceFieldId]->value))
+			{
+				$price = (float) $article->jcfields[$priceFieldId]->value;
+				error_log('[ContentCart] getPriceFromArticle - found price: ' . $price);
+
+				// Ensure price is not negative
+				return max(0.0, $price);
+			}
+			else
+			{
+				error_log('[ContentCart] getPriceFromArticle - field value is empty');
+			}
+		}
+		else
+		{
+			error_log('[ContentCart] getPriceFromArticle - field ID ' . $priceFieldId . ' not found in jcfields');
 		}
 
 		return 0.0;
@@ -620,6 +700,9 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		// PERF-005: Load CSS once when content is being displayed
 		$this->loadCss();
 
+		// Load JavaScript assets
+		$this->loadJavaScript();
+
 		// Extract parameters from event
 		$context = $event->getArgument('context');
 		$row     = $event->getArgument('item');
@@ -711,6 +794,9 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 		// PERF-005: Load CSS once when content is being prepared
 		$this->loadCss();
 
+		// Load JavaScript assets
+		$this->loadJavaScript();
+
 		// Extract parameters from event
 		$context = $event->getContext();
 		$article = $event->getItem();
@@ -759,8 +845,19 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 
 		// CART PAGE HANDLING
 		// Check if we should display cart
-		if ($link == $cart_url || $input->getInt('cart', 0) == 1)
+		$cartParam = $input->getInt('cart', 0);
+
+		if ($app->get('debug'))
 		{
+			$app->enqueueMessage('onContentPrepare: Checking cart page - link=' . $link . ', cart_url=' . $cart_url . ', cart param=' . $cartParam, 'info');
+		}
+
+		if ($link == $cart_url || $cartParam == 1)
+		{
+			if ($app->get('debug'))
+			{
+				$app->enqueueMessage('onContentPrepare: Displaying cart page for article ' . $article->id, 'success');
+			}
 			$this->handleCartDisplay($article, $link, $cart_url);
 			return;
 		}
@@ -852,5 +949,305 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 
 		// Mark button as added to prevent duplication
 		$article->contentcart_button_added = true;
+	}
+
+	/**
+	 * Flag to track if JavaScript was already loaded
+	 *
+	 * @var    boolean
+	 * @since  4.0.0
+	 */
+	private bool $jsLoaded = false;
+
+	/**
+	 * Get cart data from request (POST from localStorage) or session (fallback)
+	 *
+	 * @param   object  $session  Session object
+	 *
+	 * @return  array  Cart data
+	 *
+	 * @since   4.0.0
+	 */
+	private function getCartDataFromRequest(object $session): array
+	{
+		$app = $this->getApplication();
+		$input = $app->getInput();
+
+		// Try to get cart data from POST (from localStorage via JavaScript)
+		$cartDataJson = $input->get('cart_data', '', 'raw');
+
+		if (!empty($cartDataJson))
+		{
+			try
+			{
+				$cartData = json_decode($cartDataJson, true);
+
+				if (is_array($cartData) && isset($cartData['items']) && is_array($cartData['items']))
+				{
+					// Преобразовать формат из localStorage в формат сессии
+					$content_order = [];
+
+					foreach ($cartData['items'] as $item)
+					{
+						if (!isset($item['id']) || !isset($item['title']))
+						{
+							continue;
+						}
+
+						$content_order[] = [
+							'article_id' => (int) $item['id'],
+							'title'      => (string) $item['title'],
+							'link'       => (string) ($item['link'] ?? ''),
+							'count'      => (int) ($item['count'] ?? 1),
+							'price'      => (float) ($item['price'] ?? 0.0),
+						];
+					}
+
+					return $content_order;
+				}
+			}
+			catch (\Exception $e)
+			{
+				if ($app->get('debug'))
+				{
+					$app->enqueueMessage('ContentCart parse cart_data error: ' . $e->getMessage(), 'warning');
+				}
+			}
+		}
+
+		// Fallback: read from session (if JavaScript is disabled or old format)
+		return $session->get('content_order', []);
+	}
+
+	/**
+	 * Load JavaScript assets and configuration
+	 *
+	 * @return  void
+	 *
+	 * @since   4.0.0
+	 */
+	private function loadJavaScript(): void
+	{
+		// Only load once per request
+		if ($this->jsLoaded)
+		{
+			return;
+		}
+
+		$this->jsLoaded = true;
+
+		try
+		{
+			$app = $this->getApplication();
+			$document = $app->getDocument();
+
+			// Ensure document is HtmlDocument
+			if (!($document instanceof \Joomla\CMS\Document\HtmlDocument))
+			{
+				return;
+			}
+
+			$wam = $document->getWebAssetManager();
+
+			// Add configuration options FIRST (before loading scripts)
+			$options = [
+				'apiUrl'       => 'index.php?option=com_ajax&plugin=contentcart&group=content&format=json',
+				'token'        => Session::getFormToken() . '=1',
+				'ttlDays'      => 30,
+				'currency'     => $this->params->get('currency', ''),
+			];
+
+			$document->addScriptOptions('ContentCartOptions', $options);
+
+			// Load JavaScript files (with defer attribute, will execute after DOM ready)
+			$wam->useScript('plg_content_contentcart.contentcart');
+			$wam->useScript('plg_content_contentcart.contentcart-init');
+		}
+		catch (\Exception $e)
+		{
+			if ($this->getApplication()->get('debug'))
+			{
+				$this->getApplication()->enqueueMessage('ContentCart JS Load Error: ' . $e->getMessage(), 'warning');
+			}
+		}
+	}
+
+	/**
+	 * AJAX endpoint handler
+	 *
+	 * @param   Event  $event  The event object
+	 *
+	 * @return  void
+	 *
+	 * @since   4.0.0
+	 */
+	public function onAjaxContentcart(Event $event): void
+	{
+		$app = $this->getApplication();
+		$input = $app->input;
+
+		// Проверка CSRF токена
+		if (!Session::checkToken('get'))
+		{
+			throw new \Exception('Invalid token', 403);
+		}
+
+		// Получить method
+		$method = $input->getCmd('method', '');
+
+		if ($method === 'getPrice')
+		{
+			$articleId = $input->getInt('article_id', 0);
+
+			if ($articleId <= 0)
+			{
+				throw new \Exception('Invalid article_id', 400);
+			}
+
+			// Загрузить статью
+			$article = $this->loadArticle($articleId);
+
+			if (!$article)
+			{
+				throw new \Exception('Article not found', 404);
+			}
+
+			// Получить цену
+			$price = $this->getPriceFromArticle($article);
+
+			// Вернуть данные через event (Joomla 5 способ)
+			$result = [
+				'price' => $price,
+			];
+
+			// Joomla 5: используем ResultAwareInterface или setArgument
+			if ($event instanceof \Joomla\Event\ResultAwareInterface)
+			{
+				$event->addResult($result);
+			}
+			else
+			{
+				// Fallback для generic events
+				$eventResult = $event->getArgument('result') ?? [];
+				$eventResult[] = $result;
+				$event->setArgument('result', $eventResult);
+			}
+		}
+		else
+		{
+			throw new \Exception('Unknown method', 400);
+		}
+	}
+
+	/**
+	 * AJAX метод для получения цены товара
+	 *
+	 * @return  void
+	 *
+	 * @since   4.0.0
+	 */
+	private function getPriceAjax()
+	{
+		error_log('[ContentCart] getPriceAjax called');
+
+		$app = $this->getApplication();
+		$input = $app->input;
+
+		$articleId = $input->getInt('article_id', 0);
+		error_log('[ContentCart] getPriceAjax - article_id from input: ' . $articleId);
+
+		if ($articleId <= 0)
+		{
+			error_log('[ContentCart] getPriceAjax - invalid article_id');
+			throw new \Exception('Invalid article_id', 400);
+		}
+
+		// Загрузить статью
+		error_log('[ContentCart] getPriceAjax - loading article...');
+		$article = $this->loadArticle($articleId);
+
+		if (!$article)
+		{
+			error_log('[ContentCart] getPriceAjax - article not found');
+			throw new \Exception('Article not found', 404);
+		}
+
+		error_log('[ContentCart] getPriceAjax - article loaded successfully');
+		error_log('[ContentCart] getPriceAjax - has jcfields: ' . (isset($article->jcfields) ? 'yes' : 'no'));
+		if (isset($article->jcfields))
+		{
+			error_log('[ContentCart] getPriceAjax - jcfields count: ' . count($article->jcfields));
+			error_log('[ContentCart] getPriceAjax - jcfields keys: ' . implode(', ', array_keys($article->jcfields)));
+		}
+
+		// Получить цену
+		error_log('[ContentCart] getPriceAjax - getting price from article...');
+		$price = $this->getPriceFromArticle($article);
+		error_log('[ContentCart] getPriceAjax - price returned: ' . $price);
+
+		// Вернуть данные - Joomla автоматически сериализует в JSON
+		$result = (object) [
+			'price' => $price,
+			'debug' => (object) [
+				'article_id' => $articleId,
+				'has_jcfields' => isset($article->jcfields),
+				'jcfields_count' => isset($article->jcfields) ? count($article->jcfields) : 0,
+				'jcfields_keys' => isset($article->jcfields) ? array_keys($article->jcfields) : [],
+				'using_price' => $this->params->get('using_price'),
+				'price_field_id' => $this->params->get('price_id'),
+			]
+		];
+		error_log('[ContentCart] getPriceAjax - returning: ' . json_encode($result));
+		return $result;
+	}
+
+	/**
+	 * Загрузка статьи по ID
+	 *
+	 * @param   int  $articleId  ID статьи
+	 *
+	 * @return  object|null  Объект статьи или null
+	 *
+	 * @since   4.0.0
+	 */
+	private function loadArticle(int $articleId): ?object
+	{
+		try
+		{
+			$db = Factory::getDbo();
+			$query = $db->getQuery(true)
+				->select('a.*')
+				->from($db->quoteName('#__content', 'a'))
+				->where($db->quoteName('a.id') . ' = :id')
+				->bind(':id', $articleId, \Joomla\Database\ParameterType::INTEGER);
+
+			$db->setQuery($query);
+			$article = $db->loadObject();
+
+			if (!$article)
+			{
+				return null;
+			}
+
+			// Загрузить custom fields и присвоить к объекту статьи
+			$fields = \Joomla\Component\Fields\Administrator\Helper\FieldsHelper::getFields('com_content.article', $article);
+
+			// Преобразовать массив в ассоциативный массив по ID поля
+			$article->jcfields = [];
+			foreach ($fields as $field)
+			{
+				$article->jcfields[$field->id] = $field;
+			}
+
+			return $article;
+		}
+		catch (\Exception $e)
+		{
+			if ($this->getApplication()->get('debug'))
+			{
+				$this->getApplication()->enqueueMessage('ContentCart loadArticle Error: ' . $e->getMessage(), 'warning');
+			}
+			return null;
+		}
 	}
 }

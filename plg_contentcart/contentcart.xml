@@ -20,6 +20,7 @@
     </files>
     <media destination="plg_content_contentcart" folder="assets">
         <folder>css</folder>
+        <folder>js</folder>
         <filename>joomla.asset.json</filename>
     </media>
     <languages folder="language">

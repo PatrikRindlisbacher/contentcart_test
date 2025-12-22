@@ -86,12 +86,15 @@ $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '
 
 // PERF-005: CSS is now loaded centrally in onAfterRoute, no need to load here
 ?>
-<div class="jlcontentcart">
+<div class="jlcontentcart" id="contentcart-page">
 	<h1 class="title"><?php echo Text::_('PLG_CONTENT_CONTENTCART_SHOPPING_CART'); ?></h1>
 
 	<?php if (empty($content_order)) : ?>
-		<p><?php echo Text::_('PLG_CONTENT_CONTENTCART_CART_IS_EMPTY'); ?></p>
+		<!-- Корзина пуста в сессии, но может быть заполнена в localStorage -->
+		<p id="cart-empty-message"><?php echo Text::_('PLG_CONTENT_CONTENTCART_CART_IS_EMPTY'); ?></p>
+		<div id="cart-from-storage" style="display:none;"></div>
 	<?php else : ?>
+		<!-- Корзина из PHP сессии (старый формат) -->
 		<form name="cart_update" class="order_update" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
 			<?php echo HTMLHelper::_('form.token'); ?>
 			<table style="width:100%;">
@@ -117,29 +120,33 @@ $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '
 					<tr class="order_item">
 						<td><?php echo $key + 1; ?></td>
 						<td><a class="order_item_name" href="<?php echo htmlspecialchars($order_item['link'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($order_item['title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></td>
-						<td><input class="jlcc-input jlcc-count" type="number" name="count[<?php echo $key; ?>]" max="999" min="1" value="<?php echo $itemCount; ?>" onchange="this.form.submit()"/></td>
+						<td><input class="jlcc-input jlcc-count jlcc-item-count" type="number" name="count[<?php echo $key; ?>]" data-article-id="<?php echo (int) $order_item['article_id']; ?>" max="999" min="1" value="<?php echo $itemCount; ?>" onchange="this.form.submit()"/></td>
 						<?php if ($params->get('using_price') == '1') : ?>
 							<td name="price"><?php echo htmlspecialchars($itemPrice . ' ' . $params->get('currency'), ENT_QUOTES, 'UTF-8'); ?></td>
-							<td><?php echo htmlspecialchars($itemSum . ' ' . $params->get('currency'), ENT_QUOTES, 'UTF-8'); ?></td>
+							<td data-row-total="<?php echo (int) $order_item['article_id']; ?>"><?php echo htmlspecialchars($itemSum . ' ' . $params->get('currency'), ENT_QUOTES, 'UTF-8'); ?></td>
 						<?php endif; ?>
-						<td><a href="<?php echo htmlspecialchars(Uri::getInstance()->toString() . '?delete=' . $key . '&' . Session::getFormToken() . '=1', ENT_QUOTES, 'UTF-8'); ?>"><?php echo Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_DELETE'); ?></a></td>
+						<td><a href="<?php echo htmlspecialchars(Uri::getInstance()->toString() . '?delete=' . $key . '&' . Session::getFormToken() . '=1', ENT_QUOTES, 'UTF-8'); ?>" class="jlcc-remove-item" data-article-id="<?php echo (int) $order_item['article_id']; ?>"><?php echo Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_DELETE'); ?></a></td>
 					</tr>
 				<?php endforeach; ?>
 				<?php if ($params->get('using_price') == '1') : ?>
 					<tr class="order_total">
 						<td colspan="4" style="text-align:right;"><b><?php echo Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_TOTAL'); ?>:&nbsp;</b></td>
-						<td> <?php echo htmlspecialchars($total . ' ' . $params->get('currency'), ENT_QUOTES, 'UTF-8'); ?></td>
+						<td data-contentcart-total> <?php echo htmlspecialchars($total . ' ' . $params->get('currency'), ENT_QUOTES, 'UTF-8'); ?></td>
 						<td></td>
 					</tr>
 				<?php endif; ?>
 				</tbody>
 			</table>
 		</form>
+	<?php endif; ?>
 
+	<!-- Форма заказа - отображается всегда (для localStorage и сессии) -->
+	<div id="order-form-container" style="<?php echo empty($content_order) ? 'display:none;' : ''; ?>">
 		<h3 class="jlcc-title-data"><?php echo Text::_('PLG_CONTENT_CONTENTCART_CLIENT_DATA'); ?></h3>
-		<form name="cart_order" class="order" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
+		<form id="contentcart-order-form" name="cart_order" class="order" method="post" action="<?php echo htmlspecialchars(Uri::getInstance()->toString(), ENT_QUOTES, 'UTF-8'); ?>">
 			<div class="jlcc-block-data">
 				<input class="jlcc-input" type="hidden" name="mail" value="1"/>
+				<input class="jlcc-input" type="hidden" id="cart_data" name="cart_data" value=""/>
 				<?php if ($params->get('client_name') != '0') : ?>
 					<div>
 						<input class="jlcc-input" type="text" name="client_name" value="<?php echo $username; ?>" size="25"
@@ -181,5 +188,5 @@ $useremail = !$isGuest ? htmlspecialchars($user->email, ENT_QUOTES, 'UTF-8') : '
 				<?php echo HTMLHelper::_('form.token'); ?>
 			</div>
 		</form>
-	<?php endif; ?>
+	</div>
 </div>

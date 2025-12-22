@@ -361,7 +361,11 @@ final class ContentcartHelper
 		// Clear cart and redirect
 		$session->clear('content_order');
 		$app->enqueueMessage(Text::_('PLG_CONTENT_CONTENTCART_ORDER_ACCEPTED'));
-		$app->redirect(Uri::getInstance()->toString());
+
+		// Add flag to URL to trigger localStorage clearing via JavaScript
+		$currentUri = Uri::getInstance();
+		$currentUri->setVar('order_success', '1');
+		$app->redirect($currentUri->toString());
 
 		return true;
 	}

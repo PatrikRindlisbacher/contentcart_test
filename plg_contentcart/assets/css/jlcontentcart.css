@@ -83,3 +83,72 @@ tr.order_item {
     border: 1px solid #e5e3e3;
     padding: 10px;
 }
+
+/* ContentCart v4.0.0 - localStorage support */
+
+/* Loader spinner */
+.jlcc-loader {
+    display: inline-block;
+    margin-left: 10px;
+    animation: jlcc-spin 1s linear infinite;
+    font-size: 1.2em;
+}
+
+@keyframes jlcc-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Removing animation */
+tr.order_item.removing {
+    opacity: 0.3;
+    transition: opacity 0.3s ease-out;
+}
+
+/* Disabled button state */
+.jlcc-add-to-cart:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Module cart items list */
+.jlcc-cart-items {
+    list-style: none;
+    margin: 10px 0;
+    padding: 0;
+}
+
+.jlcc-cart-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #e5e3e3;
+    font-size: 0.9em;
+}
+
+.jlcc-cart-item:last-child {
+    border-bottom: none;
+}
+
+.jlcc-cart-item a {
+    color: #00588a;
+    text-decoration: none;
+}
+
+.jlcc-cart-item a:hover {
+    text-decoration: underline;
+}
+
+.jlcc-item-count {
+    color: #666;
+    font-size: 0.85em;
+    margin-left: 5px;
+}
+
+.jlcc-item-price {
+    float: right;
+    font-weight: bold;
+    color: #5bb75b;
+}

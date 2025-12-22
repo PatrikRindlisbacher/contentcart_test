@@ -37,22 +37,25 @@ $using_price   = $cartData['using_price'] ?? 0;
 <div class="content_cart jlcontentcart<?php echo $moduleclass_sfx; ?>">
     <p class="count">
         <span><?php echo Text::_('MOD_CONTENTCART_PRODUCTS_COUNT'); ?>: </span>
-        <span><?php echo $item_count; ?></span>
+        <span data-contentcart-count><?php echo $item_count; ?></span>
     </p>
 	<?php if ($using_price == '1') : ?>
         <p class="total">
             <span><?php echo Text::_('MOD_CONTENTCART_PRODUCT_TOTAL'); ?>: </span>
-            <span><?php echo $total . ' ' . $currency; ?></span>
+            <span data-contentcart-total><?php echo number_format($total, 2, '.', '') . ' ' . $currency; ?></span>
         </p>
 	<?php endif; ?>
 
-	<?php if ($item_count > 0 && $cart_url) : ?>
-        <a class="jlcc-button jlcc-success" href="<?php echo htmlspecialchars($cart_url, ENT_QUOTES, 'UTF-8'); ?>">
-			<?php echo Text::_('MOD_CONTENTCART_GO_TO_CART'); ?>
-        </a>
-	<?php else : ?>
-        <a class="jlcc-button jlcc-primary" href="#" disabled>
-			<?php echo Text::_('MOD_CONTENTCART_EMPTY_CART'); ?>
-        </a>
-	<?php endif; ?>
+	<!-- Список товаров из localStorage - рендерится через JavaScript -->
+	<div id="cart-items-list" style="<?php echo ($item_count > 0) ? '' : 'display:none;'; ?>">
+		<!-- JavaScript заполнит этот блок товарами из localStorage -->
+	</div>
+
+	<!-- Кнопка "Перейти в корзину" - управляется через JavaScript в зависимости от localStorage -->
+	<a id="cart-goto-button" class="jlcc-button jlcc-success" href="<?php echo htmlspecialchars($cart_url, ENT_QUOTES, 'UTF-8'); ?>" style="<?php echo ($item_count > 0) ? '' : 'display:none;'; ?>">
+		<?php echo Text::_('MOD_CONTENTCART_GO_TO_CART'); ?>
+	</a>
+	<a id="cart-empty-button" class="jlcc-button jlcc-primary" href="#" style="<?php echo ($item_count > 0) ? 'display:none;' : ''; ?>">
+		<?php echo Text::_('MOD_CONTENTCART_EMPTY_CART'); ?>
+	</a>
 </div>

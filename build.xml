@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="contentcart" default="dist" basedir=".">
 
-	<property name="VERSION" value="3.0.0"/>
+	<property name="VERSION" value="4.0.0"/>
 
 	<tstamp>
 		<format property="DATE" pattern="dd.MM.yyyy"/>
