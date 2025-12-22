@@ -57,17 +57,33 @@ final class Dispatcher extends AbstractModuleDispatcher implements HelperFactory
 			$doc = $app->getDocument();
 			$wa = $doc->getWebAssetManager();
 
-			// Register and load ContentCart assets from plugin
+			// Register ContentCart assets from plugin
 			$wa->getRegistry()->addRegistryFile('plg_content_contentcart/joomla.asset.json');
 
-			// Load CSS
-			if (!$wa->assetExists('style', 'plg_content_contentcart.jlcontentcart'))
+			// Load CSS only if enabled in module settings
+			$moduleParams = $this->getApplication()->getInput()->get('params', null);
+			$enableCss = 1; // Default to enabled
+
+			if ($moduleParams && method_exists($moduleParams, 'get'))
 			{
-				$wa->registerAndUseStyle('plg_content_contentcart.jlcontentcart', 'plg_content_contentcart/jlcontentcart.css');
+				$enableCss = $moduleParams->get('enable_css', 1);
 			}
-			else
+			elseif (isset($this->module->params))
 			{
-				$wa->useStyle('plg_content_contentcart.jlcontentcart');
+				$params = new \Joomla\Registry\Registry($this->module->params);
+				$enableCss = $params->get('enable_css', 1);
+			}
+
+			if ($enableCss)
+			{
+				if (!$wa->assetExists('style', 'plg_content_contentcart.jlcontentcart'))
+				{
+					$wa->registerAndUseStyle('plg_content_contentcart.jlcontentcart', 'plg_content_contentcart/jlcontentcart.css');
+				}
+				else
+				{
+					$wa->useStyle('plg_content_contentcart.jlcontentcart');
+				}
 			}
 
 			// Load JavaScript
@@ -137,9 +153,10 @@ final class Dispatcher extends AbstractModuleDispatcher implements HelperFactory
 
 		// Pass options to JavaScript
 		$doc->addScriptOptions('ContentCartOptions', [
-			'apiUrl'    => \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_ajax&plugin=contentcart&group=content&format=json',
-			'token'     => \Joomla\CMS\Session\Session::getFormToken(),
-			'currency'  => $params->get('currency', 'RUB'),
+			'apiUrl'     => \Joomla\CMS\Uri\Uri::root() . 'index.php?option=com_ajax&plugin=contentcart&group=content&format=json',
+			'token'      => \Joomla\CMS\Session\Session::getFormToken() . '=1',
+			'ttlDays'    => (int) $params->get('cart_ttl', 30),
+			'currency'   => $params->get('currency', 'RUB'),
 			'usingPrice' => (int) $params->get('using_price', 0),
 		]);
 	}

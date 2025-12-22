@@ -1053,8 +1053,9 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 			$options = [
 				'apiUrl'       => 'index.php?option=com_ajax&plugin=contentcart&group=content&format=json',
 				'token'        => Session::getFormToken() . '=1',
-				'ttlDays'      => 30,
+				'ttlDays'      => (int) $this->params->get('cart_ttl', 30),
 				'currency'     => $this->params->get('currency', ''),
+				'usingPrice'   => (int) $this->params->get('using_price', 0),
 			];
 
 			$document->addScriptOptions('ContentCartOptions', $options);

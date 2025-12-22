@@ -31,6 +31,9 @@ $cart_url      = $cartData['cart_url'] ?? '';
 $currency      = htmlspecialchars($cartData['currency'] ?? '', ENT_QUOTES, 'UTF-8');
 $using_price   = $cartData['using_price'] ?? 0;
 
+// Get module settings
+$show_items_list = (int) $params->get('show_items_list', 1);
+
 // PERF-005: CSS is loaded centrally by the plugin in onAfterRoute, no need to load here
 ?>
 
@@ -46,10 +49,12 @@ $using_price   = $cartData['using_price'] ?? 0;
         </p>
 	<?php endif; ?>
 
+	<?php if ($show_items_list) : ?>
 	<!-- Список товаров из localStorage - рендерится через JavaScript -->
 	<div id="cart-items-list" style="<?php echo ($item_count > 0) ? '' : 'display:none;'; ?>">
 		<!-- JavaScript заполнит этот блок товарами из localStorage -->
 	</div>
+	<?php endif; ?>
 
 	<!-- Кнопка "Перейти в корзину" - управляется через JavaScript в зависимости от localStorage -->
 	<a id="cart-goto-button" class="jlcc-button jlcc-success" href="<?php echo htmlspecialchars($cart_url, ENT_QUOTES, 'UTF-8'); ?>" style="<?php echo ($item_count > 0) ? '' : 'display:none;'; ?>">

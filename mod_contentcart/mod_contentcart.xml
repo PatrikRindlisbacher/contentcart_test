@@ -30,10 +30,20 @@
 			<field
                     name="enable_css"
                     type="radio"
-                    layout="joomla.form.field.radio.switcher"
+                    class="btn-group btn-group-yesno"
                     default="1"
                     label="MOD_CONTENTCART_ENABLE_CSS"
                     description="MOD_CONTENTCART_ENABLE_CSS_DESC">
+                <option value="1">JYES</option>
+                <option value="0">JNO</option>
+            </field>
+			<field
+                    name="show_items_list"
+                    type="radio"
+                    class="btn-group btn-group-yesno"
+                    default="1"
+                    label="MOD_CONTENTCART_SHOW_ITEMS_LIST"
+                    description="MOD_CONTENTCART_SHOW_ITEMS_LIST_DESC">
                 <option value="1">JYES</option>
                 <option value="0">JNO</option>
             </field>
