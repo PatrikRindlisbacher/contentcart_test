@@ -1111,6 +1111,12 @@ final class Contentcart extends CMSPlugin implements SubscriberInterface
 				'quantityUpdateError' => Text::_('PLG_CONTENT_CONTENTCART_JS_QUANTITY_UPDATE_ERROR'),
 				'itemsFromBrowser'    => Text::_('PLG_CONTENT_CONTENTCART_JS_ITEMS_FROM_BROWSER'),
 				'syncNote'            => Text::_('PLG_CONTENT_CONTENTCART_JS_SYNC_NOTE'),
+				'productTitle'        => Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_TITLE'),
+				'productCount'        => Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_COUNT'),
+				'productPrice'        => Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_PRICE'),
+				'productSumm'         => Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_SUMM'),
+				'productTotal'        => Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_TOTAL'),
+				'productDelete'       => Text::_('PLG_CONTENT_CONTENTCART_PRODUCT_DELETE'),
 			];
 
 			$document->addScriptOptions('ContentCartText', $texts);
