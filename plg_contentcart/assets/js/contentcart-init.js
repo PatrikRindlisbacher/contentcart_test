@@ -344,15 +344,18 @@
             const cartData = cart.getCart();
             const using_price = options.currency && options.currency.length > 0;
 
-            let html = '<p>' + (texts.itemsFromBrowser || 'Items loaded from your browser:') + '</p>';
+            let html = '<p>' + (texts.itemsFromBrowser || 'Items loaded from your browser') + '</p>';
             html += '<table style="width:100%;"><thead><tr>';
-            html += '<th>№</th><th>Наименование</th><th>Количество</th>';
+            html += '<th>№</th><th>' + (texts.productTitle || 'Product') + '</th><th>' + (texts.productCount || 'Quantity') + '</th>';
+
             if (using_price) {
-                html += '<th>Цена</th><th>Сумма</th>';
+                html += '<th>' + (texts.productPrice || 'Price') + '</th><th>' + (texts.productSumm || 'Subtotal') + '</th>';
             }
+
             html += '<th></th></tr></thead><tbody>';
 
             let total = 0;
+
             cartData.items.forEach(function(item, index) {
                 const itemSum = item.price * item.count;
                 total += itemSum;
@@ -367,21 +370,20 @@
                     html += '<td class="item-sum-js" data-article-id="' + item.id + '">' + itemSum.toFixed(2) + ' ' + options.currency + '</td>';
                 }
 
-                html += '<td><a href="#" class="jlcc-remove-item-js" data-article-id="' + item.id + '">Удалить</a></td>';
+                html += '<td><a href="#" class="jlcc-remove-item-js" data-article-id="' + item.id + '">' + (texts.productDelete || 'Remove') + '</a></td>';
                 html += '</tr>';
             });
 
             if (using_price) {
                 html += '<tr class="order_total">';
-                html += '<td colspan="4" style="text-align:right;"><b>Итого:&nbsp;</b></td>';
+                html += '<td colspan="4" style="text-align:right;"><b>' + (texts.productTotal || 'Total') + ':&nbsp;</b></td>';
                 html += '<td>' + total.toFixed(2) + ' ' + options.currency + '</td>';
                 html += '<td></td>';
                 html += '</tr>';
             }
 
             html += '</tbody></table>';
-            html += '<p><em>' + (texts.syncNote || 'Note: to submit an order, you need to refresh the page to synchronize data.') + '</em></p>';
-
+            html += '<p><em>' + (texts.syncNote || 'Note: refresh the page before submitting the order to synchronize cart data.') + '</em></p>';
             container.innerHTML = html;
 
             // Добавить обработчики изменения количества
