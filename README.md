@@ -1,3 +1,5 @@
+Das ist eine Testumgebung für die Entwicklung von Verbesseungs Vorschlägen.
+
 # Content Cart
 
 ![GitHub all releases](https://img.shields.io/github/downloads/Joomline/contentcart/total?style=for-the-badge&color=blue) ![GitHub release (latest)](https://img.shields.io/github/downloads/Joomline/contentcart/latest/total?style=for-the-badge&color=blue) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Joomline/contentcart?style=for-the-badge&color=blue) ![Joomla](https://img.shields.io/badge/Joomla-5.x%20%7C%206.x-blue?style=for-the-badge) ![License](https://img.shields.io/github/license/Joomline/contentcart?style=for-the-badge&color=blue)
