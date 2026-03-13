@@ -28,6 +28,8 @@
         <language tag="en-GB">en-GB/en-GB.plg_content_contentcart.sys.ini</language>
         <language tag="ru-RU">ru-RU/ru-RU.plg_content_contentcart.ini</language>
         <language tag="ru-RU">ru-RU/ru-RU.plg_content_contentcart.sys.ini</language>
+        <language tag="de-DE">de-DE/de-DE.plg_content_contentcart.ini</language>
+        <language tag="de-DE">de-DEde-DE.plg_content_contentcart.sys.ini</language>
     </languages>
     <config>
   <fields name="params" addfieldprefix="Joomla\Component\Content\Administrator\Field">
