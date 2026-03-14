@@ -25,6 +25,7 @@ use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Registry\Registry;
 use Joomline\Plugin\Content\Contentcart\Helper\ContentcartHelper;
+use Joomline\Plugin\Content\Contentcart\Helper\PayrexxHelper;			// Payrexx							
 
 /**
  * Content Cart Plugin
